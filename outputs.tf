@@ -23,3 +23,21 @@ output "rbac_group_ids" {
   description = "IDs de los grupos de Azure Entra ID creados."
   value       = module.rbac.entra_group_ids
 }
+
+# =========================================================================
+# OUTPUTS DEL MÓDULO DE RED (IPAM REFACCIONADO)
+# =========================================================================
+output "lz_vnets" {
+  description = "Diccionario global de todas las Redes Virtuales desplegadas (Prod, Non-Prod, DR, On-Prem)."
+  value       = module.networking.vnets
+}
+
+output "lz_subnets" {
+  description = "Diccionario global de todas las Subredes desplegadas, listas para consumo de otros módulos."
+  value       = module.networking.subnets
+}
+
+output "lz_network_resource_groups" {
+  description = "Diccionario de los grupos de recursos de red."
+  value       = module.networking.resource_groups
+}

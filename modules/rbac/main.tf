@@ -67,8 +67,8 @@ resource "azurerm_role_definition" "custom_roles" {
       data_actions = ["Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"]
     }
     "NovaHealth-ClinicalData-Operator" = {
-      description  = "Lectura y escritura en RGs de datos clínicos"
-      actions      = []
+      description = "Lectura y escritura en RGs de datos clínicos"
+      actions     = []
       data_actions = [
         "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
         "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
@@ -159,9 +159,10 @@ resource "azurerm_role_assignment" "mg_rbac" {
 
 # Asignaciones a nivel de Suscripción (Roles Custom usando role_definition_id exacto)
 resource "azurerm_role_assignment" "sub_rbac" {
-  for_each           = local.dedup_sub_assignments
-  scope              = each.value.scope
-  role_definition_id = azurerm_role_definition.custom_roles["NovaHealth-FinOps-Viewer"].role_definition_resource_id
-  principal_id       = each.value.principal_id
-  depends_on         = [azurerm_role_definition.custom_roles]
+  for_each = local.dedup_sub_assignments
+  scope    = each.value.scope
+  #role_definition_id = azurerm_role_definition.custom_roles["NovaHealth-FinOps-Viewer"].role_definition_resource_id
+  role_definition_name = "NovaHealth-FinOps-Viewer"
+  principal_id         = each.value.principal_id
+  depends_on           = [azurerm_role_definition.custom_roles]
 }

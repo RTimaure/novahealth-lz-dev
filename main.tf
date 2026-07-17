@@ -24,11 +24,12 @@ module "management_groups" {
 # 3. CAPA 2: SUSCRIPCIONES (SOPORTE DUAL ESTUDIANTE Y ENTERPRISE)
 # -------------------------------------------------------------------------
 module "subscriptions" {
-  source                   = "./modules/subscriptions"
+  source                       = "./modules/subscriptions"
   use_enterprise_subscriptions = var.use_enterprise_subscriptions
-  student_subscription_id  = var.student_subscription_id
-  enterprise_subscriptions = var.enterprise_subscriptions
-  management_group_ids     = module.management_groups.management_group_ids
+  student_subscription_id      = var.student_subscription_id
+  enterprise_subscriptions     = var.enterprise_subscriptions
+  management_group_ids         = module.management_groups.management_group_ids
+  subscription_to_mg           = var.subscription_to_mg
 }
 
 # -------------------------------------------------------------------------
@@ -59,4 +60,23 @@ module "rbac" {
 module "finops" {
   source               = "./modules/finops"
   target_subscriptions = local.target_subscriptions
+}
+
+
+
+# -------------------------------------------------------------------------
+# 7. CAPA 6: NETWORKING (TOPOLOGÍA HUB-AND-SPOKE NOVAHEALTH)
+# -------------------------------------------------------------------------
+module "networking" {
+  source               = "./modules/networking"
+  target_subscriptions = local.target_subscriptions
+
+  # Inyección de las etiquetas obligatorias según política 'LZ-Tagging'
+  tags = {
+    Environment  = "Prod"
+    BusinessUnit = "HospitalSystems"
+    CostCenter   = "IT-001"
+    Criticality  = "High"
+    Region       = "SwedenCentral"
+  }
 }

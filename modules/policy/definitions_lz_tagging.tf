@@ -81,10 +81,16 @@ METADATA
   policy_rule = <<RULE
     {
       "if": {
-        "not": {
-          "field": "name",
-          "match": "?*-?*-?*-?*-###"
-        }
+        "anyOf": [
+          {
+            "value": "[length(split(field('name'), '-'))]",
+            "notEquals": 5
+          },
+          {
+            "value": "[substring(field('name'), sub(length(field('name')), 3), 3)]",
+            "notMatch": "###"
+          }
+        ]
       },
       "then": {
         "effect": "deny"

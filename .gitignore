@@ -22,3 +22,6 @@ override.tf.json
 # CLI configuration files
 .terraformrc
 terraform.rc
+
+# Exclude Terraform plan output files, which can contain sensitive data, such as provider
+*.tfplan

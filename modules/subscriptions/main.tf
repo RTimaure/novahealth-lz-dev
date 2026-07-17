@@ -25,11 +25,14 @@ resource "azurerm_management_group_subscription_association" "student_associatio
 
 locals {
   sub_to_mg_map = {
-    for sub_key, sub_id in var.enterprise_subscriptions : sub_key => {
-      subscription_id     = sub_id
-      management_group_id = lookup(var.management_group_ids, sub_key, lookup(var.management_group_ids, "nh-${sub_key}", lookup(var.management_group_ids, "landing_zones", lookup(var.management_group_ids, "nh-landing-zones", ""))))
+    for sub_key, sub_id in var.enterprise_subscriptions :
+    sub_key => {
+      subscription_id = sub_id
+      management_group_id = var.management_group_ids[
+        var.subscription_to_mg[sub_key]
+      ]
     }
-    if sub_id != ""
+    if sub_id != "" && sub_id != null
   }
 }
 

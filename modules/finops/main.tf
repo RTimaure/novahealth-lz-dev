@@ -93,7 +93,7 @@ resource "azurerm_consumption_budget_subscription" "lz_budgets" {
     end_date   = "2030-12-31T00:00:00Z"
   }
 
-  # Alerta temprana: 50% del presupuesto mensual
+  # Alerta temprana: 50% del presupuesto mensual (Actual)
   notification {
     enabled        = true
     threshold      = 50.0
@@ -102,7 +102,7 @@ resource "azurerm_consumption_budget_subscription" "lz_budgets" {
     contact_emails = var.notification_emails
   }
 
-  # Alerta preventiva: 80% del presupuesto mensual
+  # Alerta preventiva: 80% del presupuesto mensual (Actual)
   notification {
     enabled        = true
     threshold      = 80.0
@@ -111,12 +111,30 @@ resource "azurerm_consumption_budget_subscription" "lz_budgets" {
     contact_emails = var.notification_emails
   }
 
-  # Alerta crítica: 100% del presupuesto mensual
+  # Alerta crítica: 100% del presupuesto mensual (Actual)
   notification {
     enabled        = true
     threshold      = 100.0
     operator       = "GreaterThan"
     threshold_type = "Actual"
+    contact_emails = var.notification_emails
+  }
+
+  # Alerta preventiva de pronóstico: 80% del presupuesto mensual (Forecasted)
+  notification {
+    enabled        = true
+    threshold      = 80.0
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
+    contact_emails = var.notification_emails
+  }
+
+  # Alerta crítica de pronóstico: 100% del presupuesto mensual (Forecasted)
+  notification {
+    enabled        = true
+    threshold      = 100.0
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
     contact_emails = var.notification_emails
   }
 }

@@ -33,3 +33,9 @@ variable "cicd_service_principal_object_id" {
   type    = string
   default = "" # O el valor que corresponda
 }
+
+variable "subscription_to_mg" {
+  type        = map(string)
+  description = "Para asociar cada suscripción con su Management Group correspondiente. Clave: nombre de la suscripción, Valor: ID del Management Group."
+
+}

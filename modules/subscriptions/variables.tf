@@ -22,3 +22,8 @@ variable "management_group_ids" {
   description = "Mapa con los IDs de los Management Groups generados en la Capa 1"
   default     = {}
 }
+
+variable "subscription_to_mg" {
+  description = "Mapa de asignación entre suscripciones y Management Groups."
+  type        = map(string)
+}
