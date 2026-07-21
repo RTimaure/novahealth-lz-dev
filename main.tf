@@ -77,6 +77,7 @@ module "networking" {
     BusinessUnit = "HospitalSystems"
     CostCenter   = "IT-001"
     Criticality  = "High"
-    Region       = "SwedenCentral"
+    #Region       = "francecentral"
+    Region       = "swedencentral"
   }
 }

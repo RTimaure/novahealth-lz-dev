@@ -4,27 +4,28 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"
+      version = "~> 3.90.0"
     }
   }
 }
 
 locals {
+  # IP Privada del Firewall para inspección de tráfico
+  fw_private_ip = "10.0.2.4"
+
   # =========================================================================
-  # BASE DE DATOS DE TOPOLOGÍA (IPAM CSV - NOVAHEALTH)
-  # Cumplimiento estricto de Naming Policy: <tipo>-<app>-<env>-<region>-<num>
+  # MAPA IPAM (SWE CENTRAL EXCLUSIVO - PROD, NON-PROD, ON-PREM)
+  # CORRECCIÓN: Nombres de subred restaurados al primer despliegue (sin -001)
   # =========================================================================
   vnets = {
     # --------------------------------------------------------
-    # ENTORNO: PRODUCCIÓN (Sweden Central)
+    # 1. PRODUCCIÓN (Sweden Central)
     # --------------------------------------------------------
     hub_prod = {
       name          = "vnet-hub-prod-swe-001"
       rg_name       = "rg-hub-prod-swe-001"
       location      = var.location
       address_space = ["10.0.0.0/22"]
-      is_hub        = true
-      hub_key       = null
       subnets = {
         "snet-hub-mngt-prod-swe"   = "10.0.0.0/24"
         "snet-hub-pe-prod-swe"     = "10.0.1.0/24"
@@ -41,8 +42,6 @@ locals {
       rg_name       = "rg-aks-prod-swe-001"
       location      = var.location
       address_space = ["10.0.4.0/22"]
-      is_hub        = false
-      hub_key       = "hub_prod"
       subnets = {
         "snet-aks-workload-prod-swe"   = "10.0.4.0/23"
         "snet-aks-system-prod-swe"     = "10.0.6.0/24"
@@ -56,8 +55,6 @@ locals {
       rg_name       = "rg-dataia-prod-swe-001"
       location      = var.location
       address_space = ["10.0.8.0/23"]
-      is_hub        = false
-      hub_key       = "hub_prod"
       subnets = {
         "snet-dataia-pe-prod-swe"          = "10.0.8.0/25"
         "snet-dataia-analytics-prod-swe"   = "10.0.8.128/25"
@@ -70,8 +67,6 @@ locals {
       rg_name       = "rg-apps-prod-swe-001"
       location      = var.location
       address_space = ["10.0.10.0/24"]
-      is_hub        = false
-      hub_key       = "hub_prod"
       subnets = {
         "snet-apps-aca-prod-swe"       = "10.0.10.0/25"
         "snet-apps-messaging-prod-swe" = "10.0.10.128/26"
@@ -83,25 +78,21 @@ locals {
       rg_name       = "rg-shared-prod-swe-001"
       location      = var.location
       address_space = ["10.0.11.0/24"]
-      is_hub        = false
-      hub_key       = "hub_prod"
       subnets = {
         "snet-shared-pe-prod-swe"          = "10.0.11.0/25"
-        "snet-shared-APImngt-prod-swe"     = "10.0.11.128/26"
+        "snet-shared-apim-prod-swe"        = "10.0.11.128/26"
         "snet-shared-devopstools-prod-swe" = "10.0.11.192/27"
       }
     }
 
     # --------------------------------------------------------
-    # ENTORNO: NON-PRODUCTION (Sweden Central)
+    # 2. NON-PRODUCTION (Sweden Central)
     # --------------------------------------------------------
     hub_nprod = {
       name          = "vnet-hub-nprod-swe-001"
       rg_name       = "rg-hub-nprod-swe-001"
       location      = var.location
       address_space = ["10.1.0.0/22"]
-      is_hub        = true
-      hub_key       = null
       subnets = {
         "snet-hub-mngt-nprod-swe"   = "10.1.0.0/24"
         "snet-hub-pe-nprod-swe"     = "10.1.1.0/24"
@@ -118,8 +109,6 @@ locals {
       rg_name       = "rg-aks-nprod-swe-001"
       location      = var.location
       address_space = ["10.1.4.0/22"]
-      is_hub        = false
-      hub_key       = "hub_nprod"
       subnets = {
         "snet-aks-workload-nprod-swe"   = "10.1.4.0/23"
         "snet-aks-system-nprod-swe"     = "10.1.6.0/24"
@@ -133,8 +122,6 @@ locals {
       rg_name       = "rg-dataia-nprod-swe-001"
       location      = var.location
       address_space = ["10.1.8.0/23"]
-      is_hub        = false
-      hub_key       = "hub_nprod"
       subnets = {
         "snet-dataia-pe-nprod-swe"          = "10.1.8.0/25"
         "snet-dataia-analytics-nprod-swe"   = "10.1.8.128/25"
@@ -147,8 +134,6 @@ locals {
       rg_name       = "rg-apps-nprod-swe-001"
       location      = var.location
       address_space = ["10.1.10.0/24"]
-      is_hub        = false
-      hub_key       = "hub_nprod"
       subnets = {
         "snet-apps-aca-nprod-swe"       = "10.1.10.0/25"
         "snet-apps-messaging-nprod-swe" = "10.1.10.128/26"
@@ -160,102 +145,21 @@ locals {
       rg_name       = "rg-shared-nprod-swe-001"
       location      = var.location
       address_space = ["10.1.11.0/24"]
-      is_hub        = false
-      hub_key       = "hub_nprod"
       subnets = {
         "snet-shared-pe-nprod-swe"          = "10.1.11.0/25"
-        "snet-shared-APImngt-nprod-swe"     = "10.1.11.128/26"
+        "snet-shared-apim-nprod-swe"        = "10.1.11.128/26"
         "snet-shared-devopstools-nprod-swe" = "10.1.11.192/27"
       }
     }
 
     # --------------------------------------------------------
-    # ENTORNO: DISASTER RECOVERY (West Europe)
-    # --------------------------------------------------------
-    hub_dr = {
-      name          = "vnet-hub-dr-weu-001"
-      rg_name       = "rg-hub-dr-weu-001"
-      location      = "westeurope"
-      address_space = ["10.4.0.0/22"]
-      is_hub        = true
-      hub_key       = null
-      subnets = {
-        "snet-hub-mngt-dr-weu"   = "10.4.0.0/24"
-        "snet-hub-pe-dr-weu"     = "10.4.1.0/24"
-        "AzureFirewallSubnet"    = "10.4.2.0/26"
-        "snet-hub-appgw-dr-weu"  = "10.4.2.64/26"
-        "GatewaySubnet"          = "10.4.2.128/26"
-        "AzureBastionSubnet"     = "10.4.2.192/26"
-        "snet-hub-DNSin-dr-weu"  = "10.4.3.0/27"
-        "snet-hub-DNSout-dr-weu" = "10.4.3.32/27"
-      }
-    }
-    aks_dr = {
-      name          = "vnet-aks-dr-weu-001"
-      rg_name       = "rg-aks-dr-weu-001"
-      location      = "westeurope"
-      address_space = ["10.4.4.0/22"]
-      is_hub        = false
-      hub_key       = "hub_dr"
-      subnets = {
-        "snet-aks-workload-dr-weu"   = "10.4.4.0/23"
-        "snet-aks-system-dr-weu"     = "10.4.6.0/24"
-        "snet-aks-ingress-dr-weu"    = "10.4.7.0/26"
-        "snet-aks-monitoring-dr-weu" = "10.4.7.64/27"
-        "snet-aks-pe-dr-weu"         = "10.4.7.96/27"
-      }
-    }
-    dataia_dr = {
-      name          = "vnet-dataia-dr-weu-001"
-      rg_name       = "rg-dataia-dr-weu-001"
-      location      = "westeurope"
-      address_space = ["10.4.8.0/23"]
-      is_hub        = false
-      hub_key       = "hub_dr"
-      subnets = {
-        "snet-dataia-pe-dr-weu"          = "10.4.8.0/25"
-        "snet-dataia-analytics-dr-weu"   = "10.4.8.128/25"
-        "snet-dataia-datacompute-dr-weu" = "10.4.9.0/25"
-        "snet-dataia-streamming-dr-weu"  = "10.4.9.128/26"
-      }
-    }
-    apps_dr = {
-      name          = "vnet-apps-dr-weu-001"
-      rg_name       = "rg-apps-dr-weu-001"
-      location      = "westeurope"
-      address_space = ["10.4.10.0/24"]
-      is_hub        = false
-      hub_key       = "hub_dr"
-      subnets = {
-        "snet-apps-aca-dr-weu"       = "10.4.10.0/25"
-        "snet-apps-messaging-dr-weu" = "10.4.10.128/26"
-        "snet-apps-pe-dr-weu"        = "10.4.10.192/26"
-      }
-    }
-    shared_dr = {
-      name          = "vnet-shared-dr-weu-001"
-      rg_name       = "rg-shared-dr-weu-001"
-      location      = "westeurope"
-      address_space = ["10.4.11.0/24"]
-      is_hub        = false
-      hub_key       = "hub_dr"
-      subnets = {
-        "snet-shared-pe-dr-weu"          = "10.4.11.0/25"
-        "snet-shared-APImngt-dr-weu"     = "10.4.11.128/26"
-        "snet-shared-devopstools-dr-weu" = "10.4.11.192/27"
-      }
-    }
-
-    # --------------------------------------------------------
-    # ENTORNO: ON-PREMISE EMULADO (Sweden Central)
+    # 3. ON-PREMISE EMULADO (Sweden Central)
     # --------------------------------------------------------
     onprem_prod = {
       name          = "vnet-onprem-prod-swe-001"
       rg_name       = "rg-onprem-prod-swe-001"
       location      = var.location
       address_space = ["172.16.0.0/16"]
-      is_hub        = true # Aisla la red para que no haga peering nativo como Spoke
-      hub_key       = null
       subnets = {
         "snet-onprem-users-prod-swe"    = "172.16.0.0/22"
         "snet-onprem-mngt-prod-swe"     = "172.16.4.0/24"
@@ -269,7 +173,7 @@ locals {
   }
 
   # =========================================================================
-  # LÓGICA DE PROCESAMIENTO DINÁMICO (FLATTEN)
+  # FLATTEN PARA BUCLE DE SUBREDES
   # =========================================================================
   subnet_list = flatten([
     for vkey, vnet in local.vnets : [
@@ -280,19 +184,74 @@ locals {
       }
     ]
   ])
-
+  
   subnet_map = {
     for s in local.subnet_list : "${s.vnet_key}-${s.subnet_name}" => s
   }
 
-  spoke_peerings = {
-    for k, v in local.vnets : k => v if !v.is_hub && v.hub_key != null
+  # =========================================================================
+  # TABLAS DE RUTEO (UDR) - ESTAS SÍ DEBEN TENER 5 SEGMENTOS (001)
+  # =========================================================================
+  route_tables = {
+    "rt-hubmngt-prod-swe-001" = { rg_key = "hub_prod" }
+    "rt-aks-prod-swe-001"     = { rg_key = "aks_prod" }
+    "rt-dataia-prod-swe-001"  = { rg_key = "dataia_prod" }
+    "rt-shared-prod-swe-001"  = { rg_key = "shared_prod" }
+    "rt-apps-prod-swe-001"    = { rg_key = "apps_prod" }
+  }
+
+  routes_config = flatten([
+    for rt_name, rt_attr in local.route_tables : [
+      { rt = rt_name, name = "udr-to-internet", prefix = "0.0.0.0/0", next_hop = "VirtualAppliance" },
+      { rt = rt_name, name = "udr-to-hub", prefix = "10.0.0.0/22", next_hop = "VirtualAppliance" },
+      { rt = rt_name, name = "udr-to-aks", prefix = "10.0.4.0/22", next_hop = "VirtualAppliance" },
+      { rt = rt_name, name = "udr-to-dataia", prefix = "10.0.8.0/23", next_hop = "VirtualAppliance" },
+      { rt = rt_name, name = "udr-to-apps", prefix = "10.0.10.0/24", next_hop = "VirtualAppliance" },
+      { rt = rt_name, name = "udr-to-shared", prefix = "10.0.11.0/24", next_hop = "VirtualAppliance" }
+    ]
+  ])
+
+  routes_map = { for r in local.routes_config : "${r.rt}-${r.name}" => r }
+
+  # =========================================================================
+  # ASOCIACIONES: Conecta las subredes originales con las UDRs corregidas
+  # =========================================================================
+  subnet_udr_associations = {
+    "hub_prod-snet-hub-mngt-prod-swe"              = "rt-hubmngt-prod-swe-001"
+    "aks_prod-snet-aks-workload-prod-swe"          = "rt-aks-prod-swe-001"
+    "aks_prod-snet-aks-system-prod-swe"            = "rt-aks-prod-swe-001"
+    "aks_prod-snet-aks-ingress-prod-swe"           = "rt-aks-prod-swe-001"
+    "dataia_prod-snet-dataia-analytics-prod-swe"   = "rt-dataia-prod-swe-001"
+    "dataia_prod-snet-dataia-datacompute-prod-swe" = "rt-dataia-prod-swe-001"
+    "dataia_prod-snet-dataia-streamming-prod-swe"  = "rt-dataia-prod-swe-001"
+    "shared_prod-snet-shared-apim-prod-swe"        = "rt-shared-prod-swe-001"
+    "shared_prod-snet-shared-devopstools-prod-swe" = "rt-shared-prod-swe-001"
+    "apps_prod-snet-apps-aca-prod-swe"             = "rt-apps-prod-swe-001"
+    "apps_prod-snet-apps-messaging-prod-swe"       = "rt-apps-prod-swe-001"
+  }
+
+  # =========================================================================
+  # VNET PEERINGS
+  # =========================================================================
+  peerings = {
+    "peer-hub-aks-prod-swe-01"    = { src = "hub_prod", dst = "aks_prod", fwd = true, gw_transit = false, use_remote = false }
+    "peer-aks-hub-prod-swe-01"    = { src = "aks_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
+    
+    "peer-hub-dataia-prod-swe-01" = { src = "hub_prod", dst = "dataia_prod", fwd = true, gw_transit = false, use_remote = false }
+    "peer-dataia-hub-prod-swe-01" = { src = "dataia_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
+    
+    "peer-hub-apps-prod-swe-01"   = { src = "hub_prod", dst = "apps_prod", fwd = true, gw_transit = false, use_remote = false }
+    "peer-apps-hub-prod-swe-01"   = { src = "apps_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
+    
+    "peer-hub-shared-prod-swe-01" = { src = "hub_prod", dst = "shared_prod", fwd = true, gw_transit = false, use_remote = false }
+    "peer-shared-hub-prod-swe-01" = { src = "shared_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
   }
 }
 
 # -------------------------------------------------------------------------
-# 2. RESOURCE GROUPS (REDES) - CUMPLIMIENTO DE ETIQUETADO
+# DESPLIEGUE - SE INCLUYEN TAGS DE POLÍTICA Y DEPENDENCIAS
 # -------------------------------------------------------------------------
+
 resource "azurerm_resource_group" "net_rg" {
   for_each = local.vnets
   name     = each.value.rg_name
@@ -300,9 +259,6 @@ resource "azurerm_resource_group" "net_rg" {
   tags     = var.tags
 }
 
-# -------------------------------------------------------------------------
-# 3. VIRTUAL NETWORKS - CUMPLIMIENTO DE ETIQUETADO
-# -------------------------------------------------------------------------
 resource "azurerm_virtual_network" "vnet" {
   for_each            = local.vnets
   name                = each.value.name
@@ -310,83 +266,65 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.net_rg[each.key].name
   address_space       = each.value.address_space
   tags                = var.tags
+
+  depends_on = [azurerm_resource_group.net_rg]
 }
 
-# -------------------------------------------------------------------------
-# 4. SUBNETS
-# -------------------------------------------------------------------------
 resource "azurerm_subnet" "subnet" {
   for_each             = local.subnet_map
   name                 = each.value.subnet_name
   resource_group_name  = azurerm_resource_group.net_rg[each.value.vnet_key].name
   virtual_network_name = azurerm_virtual_network.vnet[each.value.vnet_key].name
   address_prefixes     = [each.value.subnet_cidr]
+
+  depends_on = [azurerm_virtual_network.vnet]
 }
 
-# -------------------------------------------------------------------------
-# 5. VNET PEERINGS (SPOKE TO HUB / HUB TO SPOKE)
-# -------------------------------------------------------------------------
-resource "azurerm_virtual_network_peering" "hub_to_spoke" {
-  for_each                     = local.spoke_peerings
-  name                         = "peer-hub-to-${each.key}"
-  resource_group_name          = azurerm_resource_group.net_rg[each.value.hub_key].name
-  virtual_network_name         = azurerm_virtual_network.vnet[each.value.hub_key].name
-  remote_virtual_network_id    = azurerm_virtual_network.vnet[each.key].id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
+resource "azurerm_route_table" "udr" {
+  for_each                      = local.route_tables
+  name                          = each.key
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.net_rg[each.value.rg_key].name
+  disable_bgp_route_propagation = false
+  tags                          = var.tags
 
-  # 🚀 Espera a que terminen TODAS las VNets y Subredes de crearse
+  depends_on = [azurerm_resource_group.net_rg]
+}
+
+resource "azurerm_route" "routes" {
+  for_each               = local.routes_map
+  name                   = each.value.name
+  resource_group_name    = azurerm_route_table.udr[each.value.rt].resource_group_name
+  route_table_name       = azurerm_route_table.udr[each.value.rt].name
+  address_prefix         = each.value.prefix
+  next_hop_type          = each.value.next_hop
+  next_hop_in_ip_address = each.value.next_hop == "VirtualAppliance" ? local.fw_private_ip : null
+
+  depends_on = [azurerm_route_table.udr]
+}
+
+resource "azurerm_subnet_route_table_association" "udr_assoc" {
+  for_each       = local.subnet_udr_associations
+  subnet_id      = azurerm_subnet.subnet[each.key].id
+  route_table_id = azurerm_route_table.udr[each.value].id
+
   depends_on = [
-    azurerm_virtual_network.vnet,
-    azurerm_subnet.subnet
+    azurerm_subnet.subnet,
+    azurerm_route_table.udr,
+    azurerm_route.routes
   ]
 }
 
-resource "azurerm_virtual_network_peering" "spoke_to_hub" {
-  for_each                     = local.spoke_peerings
-  name                         = "peer-${each.key}-to-hub"
-  resource_group_name          = azurerm_resource_group.net_rg[each.key].name
-  virtual_network_name         = azurerm_virtual_network.vnet[each.key].name
-  remote_virtual_network_id    = azurerm_virtual_network.vnet[each.value.hub_key].id
+resource "azurerm_virtual_network_peering" "peerings" {
+  for_each                     = local.peerings
+  name                         = each.key
+  resource_group_name          = azurerm_virtual_network.vnet[each.value.src].resource_group_name
+  virtual_network_name         = azurerm_virtual_network.vnet[each.value.src].name
+  remote_virtual_network_id    = azurerm_virtual_network.vnet[each.value.dst].id
   allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
+  allow_forwarded_traffic      = each.value.fwd
+  allow_gateway_transit        = each.value.gw_transit
+  use_remote_gateways          = each.value.use_remote
 
-  # 🚀 Espera a que terminen TODAS las VNets y Subredes de crearse
-  depends_on = [
-    azurerm_virtual_network.vnet,
-    azurerm_subnet.subnet
-  ]
-}
-
-# -------------------------------------------------------------------------
-# 6. GLOBAL VNET PEERING (HUB PROD <--> HUB DR)
-# -------------------------------------------------------------------------
-resource "azurerm_virtual_network_peering" "hub_prod_to_dr" {
-  name                         = "peer-hub_prod-to-hub_dr"
-  resource_group_name          = azurerm_resource_group.net_rg["hub_prod"].name
-  virtual_network_name         = azurerm_virtual_network.vnet["hub_prod"].name
-  remote_virtual_network_id    = azurerm_virtual_network.vnet["hub_dr"].id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-
-  # 🚀 Espera a que terminen TODAS las VNets y Subredes de crearse
-  depends_on = [
-    azurerm_virtual_network.vnet,
-    azurerm_subnet.subnet
-  ]
-}
-
-resource "azurerm_virtual_network_peering" "hub_dr_to_prod" {
-  name                         = "peer-hub_dr-to-hub_prod"
-  resource_group_name          = azurerm_resource_group.net_rg["hub_dr"].name
-  virtual_network_name         = azurerm_virtual_network.vnet["hub_dr"].name
-  remote_virtual_network_id    = azurerm_virtual_network.vnet["hub_prod"].id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-
-  # 🚀 Espera a que terminen TODAS las VNets y Subredes de crearse
-  depends_on = [
-    azurerm_virtual_network.vnet,
-    azurerm_subnet.subnet
-  ]
+  depends_on = [azurerm_virtual_network.vnet]
 }
