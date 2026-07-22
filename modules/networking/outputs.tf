@@ -36,3 +36,19 @@ output "vnet_peerings" {
   description = "Diccionario con los VNet Peerings (Hub-and-Spoke locales) desplegados"
   value       = azurerm_virtual_network_peering.peerings
 }
+
+
+output "firewall_private_ip" {
+  description = "IP Privada física asignada al Azure Firewall"
+  value       = azurerm_firewall.fw.ip_configuration[0].private_ip_address
+}
+
+output "firewall_public_ip" {
+  description = "IP Pública del Azure Firewall"
+  value       = azurerm_public_ip.fw_pip.ip_address
+}
+
+output "bastion_public_ip" {
+  description = "IP Pública del Azure Bastion"
+  value       = azurerm_public_ip.bastion_pip.ip_address
+}
