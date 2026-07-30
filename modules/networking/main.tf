@@ -1,20 +1,10 @@
 # Archivo: modules/networking/main.tf
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.90.0"
-    }
-  }
-}
-
 locals {
-  # IP Privada del Firewall para inspección de tráfico
   fw_private_ip = "10.0.2.4"
 
   # =========================================================================
-  # CAPA 1: ESTRUCTURA DE RED (VNets, Subnets, Peerings, UDRs)
+  # CAPA 1: ESTRUCTURA DE RED (11 VNets: Prod, Non-Prod y On-Premise)
   # =========================================================================
   vnets = {
     hub_prod = {
@@ -195,335 +185,324 @@ locals {
 
   routes_map = { for r in local.routes_config : "${r.rt}-${r.name}" => r }
 
-  subnet_udr_associations = {
-    "hub_prod-snet-hub-mngt-prod-swe"              = "rt-hubmngt-prod-swe-001"
-    "aks_prod-snet-aks-workload-prod-swe"          = "rt-aks-prod-swe-001"
-    "aks_prod-snet-aks-system-prod-swe"            = "rt-aks-prod-swe-001"
-    "aks_prod-snet-aks-ingress-prod-swe"           = "rt-aks-prod-swe-001"
-    "dataia_prod-snet-dataia-analytics-prod-swe"   = "rt-dataia-prod-swe-001"
-    "dataia_prod-snet-dataia-datacompute-prod-swe" = "rt-dataia-prod-swe-001"
-    "dataia_prod-snet-dataia-streamming-prod-swe"  = "rt-dataia-prod-swe-001"
-    "shared_prod-snet-shared-apim-prod-swe"        = "rt-shared-prod-swe-001"
-    "shared_prod-snet-shared-devopstools-prod-swe" = "rt-shared-prod-swe-001"
-    "apps_prod-snet-apps-aca-prod-swe"             = "rt-apps-prod-swe-001"
-    "apps_prod-snet-apps-messaging-prod-swe"       = "rt-apps-prod-swe-001"
-  }
+  # =========================================================================
+  # CLASIFICACIÓN DINÁMICA MULTI-SUSCRIPCIÓN (Incluye Regex para On-Premise)
+  # =========================================================================
+  hub_vnets    = { for k, v in local.vnets : k => v if length(regexall("^(hub|onprem)", k)) > 0 }
+  data_vnets   = { for k, v in local.vnets : k => v if length(regexall("^dataia", k)) > 0 }
+  prod_vnets   = { for k, v in local.vnets : k => v if length(regexall("^(aks|apps|shared)", k)) > 0 }
 
-  peerings = {
-    "peer-hub-aks-prod-swe-01"    = { src = "hub_prod", dst = "aks_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-aks-hub-prod-swe-01"    = { src = "aks_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-hub-dataia-prod-swe-01" = { src = "hub_prod", dst = "dataia_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-dataia-hub-prod-swe-01" = { src = "dataia_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-hub-apps-prod-swe-01"   = { src = "hub_prod", dst = "apps_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-apps-hub-prod-swe-01"   = { src = "apps_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-hub-shared-prod-swe-01" = { src = "hub_prod", dst = "shared_prod", fwd = true, gw_transit = false, use_remote = false }
-    "peer-shared-hub-prod-swe-01" = { src = "shared_prod", dst = "hub_prod", fwd = true, gw_transit = false, use_remote = false }
-  }
+  hub_subnets  = { for k, v in local.subnet_map : k => v if length(regexall("^(hub|onprem)", v.vnet_key)) > 0 }
+  data_subnets = { for k, v in local.subnet_map : k => v if length(regexall("^dataia", v.vnet_key)) > 0 }
+  prod_subnets = { for k, v in local.subnet_map : k => v if length(regexall("^(aks|apps|shared)", v.vnet_key)) > 0 }
 }
 
-# --- RECURSOS CAPA 1 ---
-resource "azurerm_resource_group" "net_rg" {
-  for_each = local.vnets
+# =========================================================================
+# CAPA 1 & 3: DOMINIO HUB Y ON-PREMISE (SUSCRIPCIÓN: CONNECTIVITY)
+# =========================================================================
+resource "azurerm_resource_group" "hub" {
+  provider = azurerm.connectivity
+  for_each = local.hub_vnets
   name     = each.value.rg_name
   location = each.value.location
   tags     = var.tags
 }
 
-resource "azurerm_virtual_network" "vnet" {
-  for_each            = local.vnets
+resource "azurerm_virtual_network" "hub" {
+  provider            = azurerm.connectivity
+  for_each            = local.hub_vnets
   name                = each.value.name
-  location            = azurerm_resource_group.net_rg[each.key].location
-  resource_group_name = azurerm_resource_group.net_rg[each.key].name
+  location            = each.value.location
+  resource_group_name = azurerm_resource_group.hub[each.key].name
   address_space       = each.value.address_space
   tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
 }
 
-/*
-resource "azurerm_subnet" "subnet" {
-  for_each             = local.subnet_map
+resource "azurerm_subnet" "hub" {
+  provider             = azurerm.connectivity
+  for_each             = local.hub_subnets
   name                 = each.value.subnet_name
-  resource_group_name  = azurerm_resource_group.net_rg[each.value.vnet_key].name
-  virtual_network_name = azurerm_virtual_network.vnet[each.value.vnet_key].name
-  address_prefixes     = [each.value.subnet_cidr]
-  depends_on           = [azurerm_virtual_network.vnet]
-}
-*/
-
-resource "azurerm_subnet" "subnet" {
-  for_each             = local.subnet_map
-  name                 = each.value.subnet_name
-  resource_group_name  = azurerm_resource_group.net_rg[each.value.vnet_key].name
-  virtual_network_name = azurerm_virtual_network.vnet[each.value.vnet_key].name
+  resource_group_name  = azurerm_resource_group.hub[each.value.vnet_key].name
+  virtual_network_name = azurerm_virtual_network.hub[each.value.vnet_key].name
   address_prefixes     = [each.value.subnet_cidr]
 
-  # Inyección dinámica de delegación solo para subredes de DNS Resolver
   dynamic "delegation" {
-    for_each = can(regex("DNSin|DNSout", each.value.subnet_name)) ? [1] : []
+    for_each = length(regexall("DNSin|DNSout", each.value.subnet_name)) > 0 ? [1] : []
     content {
-      name = "dns-resolver-delegation"
+      name = "Microsoft.Network.dnsResolvers"
       service_delegation {
         name    = "Microsoft.Network/dnsResolvers"
         actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
       }
     }
   }
-
-  depends_on = [azurerm_virtual_network.vnet]
 }
 
-resource "azurerm_route_table" "udr" {
-  for_each                      = local.route_tables
-  name                          = each.key
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.net_rg[each.value.rg_key].name
-  disable_bgp_route_propagation = false
-  tags                          = var.tags
-  depends_on                    = [azurerm_resource_group.net_rg]
-}
-
-resource "azurerm_route" "routes" {
-  for_each               = local.routes_map
-  name                   = each.value.name
-  resource_group_name    = azurerm_route_table.udr[each.value.rt].resource_group_name
-  route_table_name       = azurerm_route_table.udr[each.value.rt].name
-  address_prefix         = each.value.prefix
-  next_hop_type          = each.value.next_hop
-  next_hop_in_ip_address = each.value.next_hop == "VirtualAppliance" ? local.fw_private_ip : null
-  depends_on             = [azurerm_route_table.udr]
-}
-
-resource "azurerm_subnet_route_table_association" "udr_assoc" {
-  for_each       = local.subnet_udr_associations
-  subnet_id      = azurerm_subnet.subnet[each.key].id
-  route_table_id = azurerm_route_table.udr[each.value].id
-  depends_on     = [azurerm_subnet.subnet, azurerm_route_table.udr, azurerm_route.routes]
-}
-
-resource "azurerm_virtual_network_peering" "peerings" {
-  for_each                     = local.peerings
-  name                         = each.key
-  resource_group_name          = azurerm_virtual_network.vnet[each.value.src].resource_group_name
-  virtual_network_name         = azurerm_virtual_network.vnet[each.value.src].name
-  remote_virtual_network_id    = azurerm_virtual_network.vnet[each.value.dst].id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = each.value.fwd
-  allow_gateway_transit        = each.value.gw_transit
-  use_remote_gateways          = each.value.use_remote
-  depends_on                   = [azurerm_virtual_network.vnet]
-}
-
-# =========================================================================
-# CAPA 3: POLÍTICAS DE FIREWALL Y NSGs (SEGURIDAD PERIMETRAL Y ZONAS)
-# (Se inyecta antes de la Capa 2 para que el FW pueda consumirla al nacer)
-# =========================================================================
-
-# 1. NSGs (Network Security Groups)
-resource "azurerm_network_security_group" "nsg" {
-  for_each            = local.vnets
-  name                = "nsg-${split("_", each.key)[0]}-${split("_", each.key)[1]}-swe-001"
-  location            = each.value.location
-  resource_group_name = each.value.rg_name
-  tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
-}
-
-# 2. Asociaciones de NSG dinámicas
-locals {
-  nsg_associations = {
-    for k, v in local.subnet_map : k => v
-    if !contains(["AzureFirewallSubnet", "GatewaySubnet", "AzureBastionSubnet"], v.subnet_name) && !can(regex("appgw", v.subnet_name))
-  }
-}
-
-resource "azurerm_subnet_network_security_group_association" "nsg_assoc" {
-  for_each                  = local.nsg_associations
-  subnet_id                 = azurerm_subnet.subnet[each.key].id
-  network_security_group_id = azurerm_network_security_group.nsg[each.value.vnet_key].id
-  depends_on                = [azurerm_subnet.subnet, azurerm_network_security_group.nsg]
-}
-
-# 3. Azure Firewall Policy
-resource "azurerm_firewall_policy" "fw_policy" {
-  name                = "afwp-hub-prod-swe-001"
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+resource "azurerm_network_security_group" "hub_nsgs" {
+  provider            = azurerm.connectivity
+  for_each            = { for k, v in local.hub_subnets : k => v if !contains(["AzureFirewallSubnet", "GatewaySubnet"], v.subnet_name) }
+  name                = length(regexall("^snet-", each.value.subnet_name)) > 0 ? "nsg-${split("-", each.value.subnet_name)[1]}${split("-", each.value.subnet_name)[2]}-${split("-", each.value.subnet_name)[3]}-${split("-", each.value.subnet_name)[4]}-001" : "nsg-${lower(each.value.subnet_name)}-${length(regexall("nprod", each.value.vnet_key)) > 0 ? "nprod" : "prod"}-swe-001"
   location            = var.location
+  resource_group_name = azurerm_resource_group.hub[each.value.vnet_key].name
   tags                = var.tags
-  
-  dns {
-    proxy_enabled = true
-  }
-  depends_on = [azurerm_resource_group.net_rg]
 }
 
-# 4. Azure Firewall Rules
-resource "azurerm_firewall_policy_rule_collection_group" "fw_rules" {
-  name               = "afwpr-hub-prod-swe-001"
-  firewall_policy_id = azurerm_firewall_policy.fw_policy.id
-  priority           = 100
+resource "azurerm_subnet_network_security_group_association" "hub" {
+  provider                  = azurerm.connectivity
+  for_each                  = azurerm_network_security_group.hub_nsgs
+  subnet_id                 = azurerm_subnet.hub[each.key].id
+  network_security_group_id = each.value.id
 
-  network_rule_collection {
-    name     = "Network-Rules-Core"
-    priority = 200
-    action   = "Allow"
-
-    rule {
-      name                  = "Allow-AKS-to-AzureMonitor"
-      protocols             = ["TCP"]
-      source_addresses      = ["10.0.4.0/22", "10.1.4.0/22"]
-      destination_addresses = ["AzureMonitor"]
-      destination_ports     = ["443"]
-    }
-    
-    rule {
-      name                  = "Allow-Bastion-to-Spokes-RDP-SSH"
-      protocols             = ["TCP"]
-      source_addresses      = ["10.0.2.192/26", "10.1.2.192/26"]
-      destination_addresses = ["10.0.0.0/8"]
-      destination_ports     = ["22", "3389"]
-    }
-    
-    rule {
-      name                  = "Allow-Internal-East-West"
-      protocols             = ["TCP", "UDP"]
-      source_addresses      = ["10.0.0.0/8"]
-      destination_addresses = ["10.0.0.0/8"]
-      destination_ports     = ["443", "1433", "5671", "80"]
-    }
-  }
-
-  application_rule_collection {
-    name     = "Application-Rules-Internet"
-    priority = 300
-    action   = "Allow"
-
-    rule {
-      name = "Allow-AKS-Internet-Egress"
-      protocols {
-        type = "Https"
-        port = 443
-      }
-      protocols {
-        type = "Http"
-        port = 80
-      }
-      source_addresses  = ["10.0.4.0/22", "10.1.4.0/22"]
-      destination_fqdns = [
-        "*.github.com",
-        "*.docker.io",
-        "mcr.microsoft.com",
-        "*.ubuntu.com",
-        "*.azure.com",
-        "*.azure.net"
-      ]
-    }
-    
-    rule {
-      name = "Allow-Apps-to-PaaS"
-      protocols {
-        type = "Https"
-        port = 443
-      }
-      source_addresses  = ["10.0.0.0/8"]
-      destination_fqdns = [
-        "*.database.windows.net",
-        "*.blob.core.windows.net",
-        "*.vault.azure.net",
-        "*.search.windows.net",
-        "*.openai.azure.com"
-      ]
-    }
-  }
+  depends_on = [
+    azurerm_network_security_rule.hub_rules
+  ]
 }
 
 # =========================================================================
-# CAPA 2: APPLIANCES PERIMETRALES (FIREWALL & BASTION)
+# CAPA 1 & 3: DOMINIO DATA & IA (SUSCRIPCIÓN: DATA AND IA PLATFORM)
 # =========================================================================
-resource "azurerm_public_ip" "fw_pip" {
+resource "azurerm_resource_group" "data" {
+  provider = azurerm.data_ia
+  for_each = local.data_vnets
+  name     = each.value.rg_name
+  location = each.value.location
+  tags     = var.tags
+}
+
+resource "azurerm_virtual_network" "data" {
+  provider            = azurerm.data_ia
+  for_each            = local.data_vnets
+  name                = each.value.name
+  location            = each.value.location
+  resource_group_name = azurerm_resource_group.data[each.key].name
+  address_space       = each.value.address_space
+  tags                = var.tags
+}
+
+resource "azurerm_subnet" "data" {
+  provider             = azurerm.data_ia
+  for_each             = local.data_subnets
+  name                 = each.value.subnet_name
+  resource_group_name  = azurerm_resource_group.data[each.value.vnet_key].name
+  virtual_network_name = azurerm_virtual_network.data[each.value.vnet_key].name
+  address_prefixes     = [each.value.subnet_cidr]
+}
+
+resource "azurerm_network_security_group" "data_nsgs" {
+  provider            = azurerm.data_ia
+  for_each            = local.data_subnets
+  name                = length(regexall("^snet-", each.value.subnet_name)) > 0 ? "nsg-${split("-", each.value.subnet_name)[1]}${split("-", each.value.subnet_name)[2]}-${split("-", each.value.subnet_name)[3]}-${split("-", each.value.subnet_name)[4]}-001" : "nsg-${lower(each.value.subnet_name)}-${length(regexall("nprod", each.value.vnet_key)) > 0 ? "nprod" : "prod"}-swe-001"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.data[each.value.vnet_key].name
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "data" {
+  provider                  = azurerm.data_ia
+  for_each                  = azurerm_network_security_group.data_nsgs
+  subnet_id                 = azurerm_subnet.data[each.key].id
+  network_security_group_id = each.value.id
+
+  depends_on = [
+    azurerm_network_security_rule.data_ia_rules
+  ]
+}
+
+# =========================================================================
+# CAPA 1 & 3: DOMINIO PRODUCCIÓN (SUSCRIPCIÓN: PRODUCTION)
+# =========================================================================
+resource "azurerm_resource_group" "prod" {
+  provider = azurerm.production
+  for_each = local.prod_vnets
+  name     = each.value.rg_name
+  location = each.value.location
+  tags     = var.tags
+}
+
+resource "azurerm_virtual_network" "prod" {
+  provider            = azurerm.production
+  for_each            = local.prod_vnets
+  name                = each.value.name
+  location            = each.value.location
+  resource_group_name = azurerm_resource_group.prod[each.key].name
+  address_space       = each.value.address_space
+  tags                = var.tags
+}
+
+resource "azurerm_subnet" "prod" {
+  provider             = azurerm.production
+  for_each             = local.prod_subnets
+  name                 = each.value.subnet_name
+  resource_group_name  = azurerm_resource_group.prod[each.value.vnet_key].name
+  virtual_network_name = azurerm_virtual_network.prod[each.value.vnet_key].name
+  address_prefixes     = [each.value.subnet_cidr]
+}
+
+resource "azurerm_network_security_group" "prod_nsgs" {
+  provider            = azurerm.production
+  for_each            = local.prod_subnets
+  name                = length(regexall("^snet-", each.value.subnet_name)) > 0 ? "nsg-${split("-", each.value.subnet_name)[1]}${split("-", each.value.subnet_name)[2]}-${split("-", each.value.subnet_name)[3]}-${split("-", each.value.subnet_name)[4]}-001" : "nsg-${lower(each.value.subnet_name)}-${length(regexall("nprod", each.value.vnet_key)) > 0 ? "nprod" : "prod"}-swe-001"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.prod[each.value.vnet_key].name
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "prod" {
+  provider                  = azurerm.production
+  for_each                  = azurerm_network_security_group.prod_nsgs
+  subnet_id                 = azurerm_subnet.prod[each.key].id
+  network_security_group_id = each.value.id
+
+  depends_on = [
+    azurerm_network_security_rule.prod_rules
+  ]
+}
+
+# =========================================================================
+# GLOBAL VNET PEERINGS (Routing adaptativo Prod/Non-Prod a su respectivo Hub)
+# =========================================================================
+resource "azurerm_virtual_network_peering" "hub_to_prod" {
+  provider                     = azurerm.connectivity
+  for_each                     = local.prod_vnets
+  name                         = "peer-hub-to-${each.key}-swe-01"
+  resource_group_name          = azurerm_resource_group.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].name
+  virtual_network_name         = azurerm_virtual_network.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].name
+  remote_virtual_network_id    = azurerm_virtual_network.prod[each.key].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  depends_on                   = [azurerm_subnet.hub, azurerm_subnet.prod]
+}
+
+resource "azurerm_virtual_network_peering" "prod_to_hub" {
+  provider                     = azurerm.production
+  for_each                     = local.prod_vnets
+  name                         = "peer-${each.key}-to-hub-swe-01"
+  resource_group_name          = azurerm_resource_group.prod[each.key].name
+  virtual_network_name         = azurerm_virtual_network.prod[each.key].name
+  remote_virtual_network_id    = azurerm_virtual_network.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  depends_on                   = [azurerm_subnet.prod, azurerm_subnet.hub]
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_data" {
+  provider                     = azurerm.connectivity
+  for_each                     = local.data_vnets
+  name                         = "peer-hub-to-${each.key}-swe-01"
+  resource_group_name          = azurerm_resource_group.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].name
+  virtual_network_name         = azurerm_virtual_network.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].name
+  remote_virtual_network_id    = azurerm_virtual_network.data[each.key].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  depends_on                   = [azurerm_subnet.hub, azurerm_subnet.data]
+}
+
+resource "azurerm_virtual_network_peering" "data_to_hub" {
+  provider                     = azurerm.data_ia
+  for_each                     = local.data_vnets
+  name                         = "peer-${each.key}-to-hub-swe-01"
+  resource_group_name          = azurerm_resource_group.data[each.key].name
+  virtual_network_name         = azurerm_virtual_network.data[each.key].name
+  remote_virtual_network_id    = azurerm_virtual_network.hub[length(regexall("nprod", each.key)) > 0 ? "hub_nprod" : "hub_prod"].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  depends_on                   = [azurerm_subnet.data, azurerm_subnet.hub]
+}
+
+# =========================================================================
+# CAPA 2: APPLIANCES PERIMETRALES (Solo para Entorno PROD por ahorros FinOps)
+# =========================================================================
+resource "azurerm_public_ip" "firewall_pip" {
+  provider            = azurerm.connectivity
   name                = "pip-fw-prod-swe-001"
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   allocation_method   = "Static"
   sku                 = "Standard"
   tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
+}
+
+resource "azurerm_firewall_policy" "fw_policy" {
+  provider            = azurerm.connectivity
+  name                = "afwp-hub-prod-swe-001"
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
+  location            = var.location
+  tags                = var.tags
 }
 
 resource "azurerm_firewall" "fw" {
+  provider            = azurerm.connectivity
   name                = "afw-hub-prod-swe-001"
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   sku_name            = "AZFW_VNet"
   sku_tier            = "Standard"
-  tags                = var.tags
   firewall_policy_id  = azurerm_firewall_policy.fw_policy.id
+  tags                = var.tags
 
   ip_configuration {
-    name                 = "fw-ip-config"
-    subnet_id            = azurerm_subnet.subnet["hub_prod-AzureFirewallSubnet"].id
-    public_ip_address_id = azurerm_public_ip.fw_pip.id
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.hub["hub_prod-AzureFirewallSubnet"].id
+    public_ip_address_id = azurerm_public_ip.firewall_pip.id
   }
-
-  depends_on = [
-    azurerm_subnet.subnet,
-    azurerm_public_ip.fw_pip,
-    azurerm_firewall_policy.fw_policy
-  ]
 }
 
 resource "azurerm_public_ip" "bastion_pip" {
+  provider            = azurerm.connectivity
   name                = "pip-bas-prod-swe-001"
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   allocation_method   = "Static"
   sku                 = "Standard"
   tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
 }
 
 resource "azurerm_bastion_host" "bastion" {
+  provider            = azurerm.connectivity
   name                = "bas-hub-prod-swe-001"
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   sku                 = "Standard"
   tags                = var.tags
 
   ip_configuration {
-    name                 = "bastion-ip-config"
-    subnet_id            = azurerm_subnet.subnet["hub_prod-AzureBastionSubnet"].id
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.hub["hub_prod-AzureBastionSubnet"].id
     public_ip_address_id = azurerm_public_ip.bastion_pip.id
   }
-
-  depends_on = [
-    azurerm_subnet.subnet,
-    azurerm_public_ip.bastion_pip
-  ]
+  timeouts {
+    create = "45m"
+  }
 }
 
-# Archivo: modules/networking/main.tf
-
-# =========================================================================
-# CAPA 4: SERVICIOS PERIMETRALES AVANZADOS (WAF, VPN & DNS)
-# Según matriz de diseño networking_hub_spoke.csv (Flujos F1, F3, F4)
-# =========================================================================
-
-# -------------------------------------------------------------------------
-# 1. APPLICATION GATEWAY WAF v2 (Flujo F1 - Publicación Segura)
-# -------------------------------------------------------------------------
-resource "azurerm_public_ip" "appgw_pip" {
-  name                = "pip-agw-prod-swe-001"
+resource "azurerm_public_ip" "vpngw_pip" {
+  provider            = azurerm.connectivity
+  name                = "pip-vpngw-prod-swe-001"
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
+  tags                = var.tags
+}
+
+# =========================================================================
+# CAPA 4: APPLICATION GATEWAY (Solo para Entorno PROD por ahorros FinOps)
+# =========================================================================
+resource "azurerm_public_ip" "appgw_pip" {
+  provider            = azurerm.connectivity
+  name                = "pip-appgw-prod-swe-001"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   allocation_method   = "Static"
   sku                 = "Standard"
   tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
 }
 
-# NUEVO RECURSO: WAF Policy Independiente (Reemplaza configuración deprecada)
-resource "azurerm_web_application_firewall_policy" "waf_policy" {
+resource "azurerm_web_application_firewall_policy" "waf" {
+  provider            = azurerm.connectivity
   name                = "waf-agw-prod-swe-001"
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   location            = var.location
   tags                = var.tags
 
@@ -541,18 +520,15 @@ resource "azurerm_web_application_firewall_policy" "waf_policy" {
       version = "3.2"
     }
   }
-  
-  depends_on = [azurerm_resource_group.net_rg]
 }
 
 resource "azurerm_application_gateway" "appgw" {
+  provider            = azurerm.connectivity
   name                = "agw-hub-prod-swe-001"
+  resource_group_name = azurerm_resource_group.hub["hub_prod"].name
   location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
   tags                = var.tags
-  
-  # Asociación de la nueva política WAF independiente
-  firewall_policy_id = azurerm_web_application_firewall_policy.waf_policy.id
+  firewall_policy_id  = azurerm_web_application_firewall_policy.waf.id
 
   sku {
     name     = "WAF_v2"
@@ -560,142 +536,51 @@ resource "azurerm_application_gateway" "appgw" {
     capacity = 2
   }
 
-  # SOLUCIÓN AL ERROR: Forzar uso exclusivo de TLS 1.2 y TLS 1.3
   ssl_policy {
     policy_type = "Predefined"
     policy_name = "AppGwSslPolicy20220101"
   }
 
   gateway_ip_configuration {
-    name      = "appgw-ip-config"
-    subnet_id = azurerm_subnet.subnet["hub_prod-snet-hub-appgw-prod-swe"].id
+    name      = "agw-ip-config"
+    subnet_id = azurerm_subnet.hub["hub_prod-snet-hub-appgw-prod-swe"].id
   }
 
   frontend_port {
-    name = "fe-port-https"
-    port = 443
-  }
-  
-  frontend_port {
-    name = "fe-port-http"
+    name = "frontend-port-http"
     port = 80
   }
 
   frontend_ip_configuration {
-    name                 = "fe-ip-config"
+    name                 = "frontend-ip-config"
     public_ip_address_id = azurerm_public_ip.appgw_pip.id
   }
 
   backend_address_pool {
-    name = "aks-backend-pool"
+    name = "backend-pool"
   }
 
   backend_http_settings {
-    name                  = "https-settings"
+    name                  = "backend-http-settings"
     cookie_based_affinity = "Disabled"
-    port                  = 443
-    protocol              = "Https"
+    port                  = 80
+    protocol              = "Http"
     request_timeout       = 60
   }
 
   http_listener {
     name                           = "http-listener"
-    frontend_ip_configuration_name = "fe-ip-config"
-    frontend_port_name             = "fe-port-http"
+    frontend_ip_configuration_name = "frontend-ip-config"
+    frontend_port_name             = "frontend-port-http"
     protocol                       = "Http"
   }
 
   request_routing_rule {
-    name                       = "rule-aks-routing"
+    name                       = "routing-rule"
+    priority                   = 100
     rule_type                  = "Basic"
     http_listener_name         = "http-listener"
-    backend_address_pool_name  = "aks-backend-pool"
-    backend_http_settings_name = "https-settings"
-    priority                   = 100
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "backend-http-settings"
   }
-
-  # Nota: Se eliminaron dependencias explícitas redundantes ya resueltas por referencias internas (.id)
-  depends_on = [
-    azurerm_subnet.subnet
-  ]
-}
-
-
-# -------------------------------------------------------------------------
-# 2. AZURE VIRTUAL NETWORK GATEWAY (Flujo F3 - VPN IPSec BGP)
-# [COMENTADO TEMPORALMENTE] Motivo: Límite estricto de 3 IPs Públicas por
-# región alcanzado (Firewall, Bastion, AppGW). El SKU también ha sido 
-# actualizado a 'VpnGw1AZ' para cumplir con las nuevas normativas de ARM.
-# -------------------------------------------------------------------------
-
-# ESTA PARTE DE PUNTO 2 SE COMENTA PARA EVITAR ERRORES DE LÍMITE DE IP PÚBLICAS EN LA REGIÓN - EN CUENTA PAY AS YOU GO DESCOMENTAR
-resource "azurerm_public_ip" "vpngw_pip" {
-  name                = "pip-vpn-prod-swe-001"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  tags                = var.tags
-  depends_on          = [azurerm_resource_group.net_rg]
-}
-
-resource "azurerm_virtual_network_gateway" "vpngw" {
-  name                = "vgw-hub-prod-swe-001"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
-  type                = "Vpn"
-  vpn_type            = "RouteBased"
-  active_active       = false
-  enable_bgp          = true
-  sku                 = "VpnGw1AZ" # Corregido desde VpnGw1 clásico
-  tags                = var.tags
-
-  ip_configuration {
-    name                          = "vpngw-ip-config"
-    public_ip_address_id          = azurerm_public_ip.vpngw_pip.id
-    private_ip_address_allocation = "Dynamic"
-    subnet_id                     = azurerm_subnet.subnet["hub_prod-GatewaySubnet"].id
-  }
-
-  bgp_settings {
-    asn = 65515
-  }
-
-  depends_on = [
-    azurerm_subnet.subnet,
-    azurerm_public_ip.vpngw_pip
-  ]
-}
-
-
-# -------------------------------------------------------------------------
-# 3. AZURE DNS PRIVATE RESOLVER (Flujo F4 - Resolución Interna/Externa)
-# -------------------------------------------------------------------------
-resource "azurerm_private_dns_resolver" "dns_resolver" {
-  name                = "dns-hub-prod-swe-001"
-  resource_group_name = azurerm_resource_group.net_rg["hub_prod"].name
-  location            = var.location
-  virtual_network_id  = azurerm_virtual_network.vnet["hub_prod"].id
-  tags                = var.tags
-  depends_on          = [azurerm_virtual_network.vnet]
-}
-
-resource "azurerm_private_dns_resolver_inbound_endpoint" "dns_inbound" {
-  name                    = "din-hub-prod-swe-001"
-  private_dns_resolver_id = azurerm_private_dns_resolver.dns_resolver.id
-  location                = var.location
-  tags                    = var.tags
-  
-  ip_configurations {
-    private_ip_allocation_method = "Dynamic"
-    subnet_id                    = azurerm_subnet.subnet["hub_prod-snet-hub-DNSin-prod-swe"].id
-  }
-}
-
-resource "azurerm_private_dns_resolver_outbound_endpoint" "dns_outbound" {
-  name                    = "dou-hub-prod-swe-001"
-  private_dns_resolver_id = azurerm_private_dns_resolver.dns_resolver.id
-  location                = var.location
-  subnet_id               = azurerm_subnet.subnet["hub_prod-snet-hub-DNSout-prod-swe"].id
-  tags                    = var.tags
 }

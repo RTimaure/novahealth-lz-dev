@@ -13,122 +13,103 @@ terraform {
   }
 }
 
-# -------------------------------------------------------------------------
-# 1. CREACIÓN DE GRUPOS EN MICROSOFT ENTRA ID (RBAC COMPLIANCE)
-# -------------------------------------------------------------------------
-
-locals {
-  entra_groups = {
-    "grp-novahealth-platform-admins" = "Administradores de la plataforma Landing Zone Owner"
-    "grp-novahealth-security-team"   = "Equipo de Seguridad Security Admin"
-    "grp-novahealth-governance-team" = "Equipo de Gobierno y Políticas Cloud Governance Team"
-    "grp-novahealth-finops-team"     = "Equipo FinOps control de costes"
-    "grp-novahealth-ops-team"        = "Equipo Operaciones Producción"
-    "grp-novahealth-dev-team"        = "Equipo Desarrollo Dev/QA"
-    "grp-novahealth-clinicalai-team" = "Equipo Inteligencia Artificial Clínica"
-    "grp-novahealth-network-team"    = "Equipo Conectividad y Redes"
-    "grp-novahealth-data-team"       = "Equipo Gestión de Datos Sanitarios"
-    "grp-novahealth-auditors"        = "Auditoría regulatoria GDPR y NIS2"
-  }
-}
-
+# =========================================================================
+# 1. CREACIÓN DE GRUPOS CORPORATIVOS EN MICROSOFT ENTRA ID
+# =========================================================================
 resource "azuread_group" "novahealth_groups" {
-  for_each         = local.entra_groups
+  for_each = toset([
+    "grp-novahealth-security-team",
+    "grp-novahealth-governance-team",
+    "grp-novahealth-finops-team",
+    "grp-novahealth-auditors",
+    "grp-novahealth-ops-team",
+    "grp-novahealth-dev-team",
+    "grp-novahealth-sre-team",
+    "grp-novahealth-clinical-ai-team",
+    "grp-novahealth-qa-team",
+    "grp-novahealth-dev-lead",
+    "grp-novahealth-application-team",
+    "grp-novahealth-data-team",
+    "grp-novahealth-network-team"
+  ])
+
   display_name     = each.key
-  description      = each.value
   security_enabled = true
 }
 
-# -------------------------------------------------------------------------
-# 2. NORMALIZACIÓN DE SCOPES PARA ROLES CUSTOM Y ASIGNACIONES
-# -------------------------------------------------------------------------
-
+# =========================================================================
+# 2. DEFINICIÓN DE ROLES CUSTOM CORPORATIVOS (SECTOR SALUD - NOVAHEALTH)
+# =========================================================================
 locals {
-  # Extraemos las suscripciones únicas de entrada y les aseguramos el formato URI formal
-  normalized_sub_scopes = distinct([
+  normalized_sub_scopes = [
     for sub_id in values(var.target_subscriptions) :
     startswith(sub_id, "/subscriptions/") ? sub_id : "/subscriptions/${sub_id}"
-    if sub_id != ""
-  ])
-
-  # Combinamos el MG raíz y las suscripciones para que Azure autorice la asignación en ambos niveles
+  ]
   all_assignable_scopes = concat([var.root_mg_id], local.normalized_sub_scopes)
 }
-
-# -------------------------------------------------------------------------
-# 3. DEFINICIÓN DE ROLES CUSTOM EN AZURE (SEPARANDO DATA ACTIONS)
-# -------------------------------------------------------------------------
 
 resource "azurerm_role_definition" "custom_roles" {
   for_each = {
     "NovaHealth-ClinicalData-Reader" = {
-      description  = "Lectura de Storage Accounts con datos clínicos"
-      actions      = []
+      description  = "Lectura de Storage Accounts con datos clínicos y controlados."
+      actions      = ["Microsoft.Storage/storageAccounts/read", "Microsoft.Storage/storageAccounts/blobServices/containers/read"]
       data_actions = ["Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"]
     }
     "NovaHealth-ClinicalData-Operator" = {
-      description = "Lectura y escritura en RGs de datos clínicos"
-      actions     = []
-      data_actions = [
-        "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
-        "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
-        "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete"
-      ]
+      description  = "Lectura y escritura en RGs de datos clínicos para aplicaciones."
+      actions      = ["Microsoft.Storage/storageAccounts/read", "Microsoft.Storage/storageAccounts/blobServices/containers/*"]
+      data_actions = ["Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read", "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write"]
     }
     "NovaHealth-Compliance-Auditor" = {
-      description = "Lectura de logs, políticas y Defender para auditoría regulatoria"
+      description = "Lectura de logs, políticas y Defender para auditoría GDPR/NIS2."
       actions = [
         "Microsoft.Authorization/policyAssignments/read",
         "Microsoft.Authorization/policyDefinitions/read",
-        "Microsoft.Security/policies/read",
+        "Microsoft.Security/assessments/read",
+        "Microsoft.Insights/alertRules/read",
         "Microsoft.OperationalInsights/workspaces/read"
       ]
       data_actions = []
     }
+    # Corrección de la acción obsoleta de Consumption a CostManagement y validas
     "NovaHealth-FinOps-Viewer" = {
-      description = "Lectura de Cost Management y tags por suscripción"
+      description = "Lectura de Cost Management y etiquetas para seguimiento financiero."
       actions = [
-        "Microsoft.Consumption/usageDetails/read",
+        "Microsoft.CostManagement/budgets/read",
         "Microsoft.CostManagement/query/read",
-        "Microsoft.Resources/subscriptions/tagNames/read"
+        "Microsoft.Consumption/usageDetails/read",
+        "Microsoft.Resources/subscriptions/resourceGroups/read",
+        "Microsoft.Resources/subscriptions/read"
       ]
       data_actions = []
     }
   }
 
-  name        = each.key
-  scope       = var.root_mg_id
-  description = each.value.description
+  name              = each.key
+  scope             = var.root_mg_id
+  description       = each.value.description
+  assignable_scopes = local.all_assignable_scopes
 
   permissions {
-    actions          = each.value.actions
-    data_actions     = each.value.data_actions
-    not_actions      = []
-    not_data_actions = []
+    actions      = each.value.actions
+    data_actions = each.value.data_actions
   }
-
-  # Inyectamos todos los ámbitos autorizados para que ARM no bloquee la asignación
-  assignable_scopes = local.all_assignable_scopes
 }
 
-# -------------------------------------------------------------------------
-# 4. ASIGNACIONES DE ROLES (USANDO ROLE DEFINITION ID EXACTO)
-# -------------------------------------------------------------------------
-
+# =========================================================================
+# 3. ASIGNACIONES DE ROLES A NIVEL DE MANAGEMENT GROUP (NIVEL 1)
+# =========================================================================
 locals {
+  platform_mg_id = replace(var.root_mg_id, "nh-root", "nh-platform")
+
   mg_assignments = {
-    "root_platform_admins" = {
-      scope        = var.root_mg_id
-      role_name    = "Owner"
-      principal_id = azuread_group.novahealth_groups["grp-novahealth-platform-admins"].object_id
-    }
     "security_admin" = {
       scope        = var.security_mg_id
       role_name    = "Security Admin"
       principal_id = azuread_group.novahealth_groups["grp-novahealth-security-team"].object_id
     }
-    "root_governance" = {
-      scope        = var.root_mg_id
+    "platform_governance" = {
+      scope        = local.platform_mg_id
       role_name    = "Resource Policy Contributor"
       principal_id = azuread_group.novahealth_groups["grp-novahealth-governance-team"].object_id
     }
@@ -137,32 +118,69 @@ locals {
       role_name    = "Reader"
       principal_id = azuread_group.novahealth_groups["grp-novahealth-auditors"].object_id
     }
-  }
-
-  dedup_sub_assignments = {
-    for sub_scope in local.normalized_sub_scopes :
-    "finops_${md5(sub_scope)}" => {
-      scope        = sub_scope
-      principal_id = azuread_group.novahealth_groups["grp-novahealth-finops-team"].object_id
+    "root_finops" = {
+      scope              = var.root_mg_id
+      role_definition_id = azurerm_role_definition.custom_roles["NovaHealth-FinOps-Viewer"].role_definition_resource_id
+      principal_id       = azuread_group.novahealth_groups["grp-novahealth-finops-team"].object_id
     }
   }
 }
 
-# Asignaciones a nivel de Management Group (Roles Built-in usando su nombre)
 resource "azurerm_role_assignment" "mg_rbac" {
-  for_each             = local.mg_assignments
+  for_each = local.mg_assignments
+
   scope                = each.value.scope
-  role_definition_name = each.value.role_name
+  role_definition_name = lookup(each.value, "role_name", null)
+  role_definition_id   = lookup(each.value, "role_definition_id", null)
   principal_id         = each.value.principal_id
-  depends_on           = [azurerm_role_definition.custom_roles]
 }
 
-# Asignaciones a nivel de Suscripción (Roles Custom usando role_definition_id exacto)
+# =========================================================================
+# 4. ASIGNACIONES A NIVEL DE SUSCRIPCIÓN (NIVEL 2)
+# =========================================================================
+locals {
+  sub_assignments_raw = flatten([
+    contains(keys(var.target_subscriptions), "production") ? [
+      { key = "prod_ops", sub = var.target_subscriptions["production"], role = "Contributor", group = "grp-novahealth-ops-team" },
+      { key = "prod_dev", sub = var.target_subscriptions["production"], role = "Reader", group = "grp-novahealth-dev-team" },
+      { key = "prod_sre", sub = var.target_subscriptions["production"], role = "Monitoring Contributor", group = "grp-novahealth-sre-team" }
+    ] : [],
+    
+    contains(keys(var.target_subscriptions), "data_ai") ? [
+      { key = "data_ai_clinical", sub = var.target_subscriptions["data_ai"], role = "Contributor", group = "grp-novahealth-clinical-ai-team" }
+    ] : [],
+    
+    contains(keys(var.target_subscriptions), "qa") ? [
+      { key = "qa_qa",  sub = var.target_subscriptions["qa"], role = "Contributor", group = "grp-novahealth-qa-team" },
+      { key = "qa_dev", sub = var.target_subscriptions["qa"], role = "Reader", group = "grp-novahealth-dev-team" }
+    ] : [],
+    
+    contains(keys(var.target_subscriptions), "development") ? [
+      { key = "dev_dev",  sub = var.target_subscriptions["development"], role = "Contributor", group = "grp-novahealth-dev-team" },
+      { key = "dev_lead", sub = var.target_subscriptions["development"], role = "Cost Management Contributor", group = "grp-novahealth-dev-lead" }
+    ] : []
+  ])
+
+  dedup_sub_assignments = { for item in local.sub_assignments_raw : item.key => item }
+}
+
 resource "azurerm_role_assignment" "sub_rbac" {
   for_each = local.dedup_sub_assignments
-  scope    = each.value.scope
-  #role_definition_id = azurerm_role_definition.custom_roles["NovaHealth-FinOps-Viewer"].role_definition_resource_id
-  role_definition_name = "NovaHealth-FinOps-Viewer"
-  principal_id         = each.value.principal_id
-  depends_on           = [azurerm_role_definition.custom_roles]
+
+  scope                = startswith(each.value.sub, "/subscriptions/") ? each.value.sub : "/subscriptions/${each.value.sub}"
+  role_definition_name = each.value.role
+  principal_id         = azuread_group.novahealth_groups[each.value.group].object_id
+  
+  depends_on = [azurerm_role_definition.custom_roles]
+}
+
+# =========================================================================
+# 5. ASIGNACIÓN SERVICE PRINCIPAL CI/CD (TERRAFORM AUTOMATION)
+# =========================================================================
+resource "azurerm_role_assignment" "cicd_rbac" {
+  for_each = var.cicd_service_principal_object_id != "" ? var.target_subscriptions : {}
+
+  scope                = startswith(each.value, "/subscriptions/") ? each.value : "/subscriptions/${each.value}"
+  role_definition_name = "Contributor"
+  principal_id         = var.cicd_service_principal_object_id
 }

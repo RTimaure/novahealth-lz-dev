@@ -1,54 +1,67 @@
 # Archivo: modules/networking/outputs.tf
-/*
-output "vnets" {
-  description = "Diccionario con todas las Virtual Networks desplegadas (Prod, Non-Prod, DR, On-Premise)"
-  value       = azurerm_virtual_network.vnet
-}
 
-output "subnets" {
-  description = "Diccionario con todas las Subredes desplegadas, indexadas por la clave <vnet_key>-<subnet_name>"
-  value       = azurerm_subnet.subnet
-}
-*/
 output "resource_groups" {
-  description = "Diccionario con todos los Resource Groups de red desplegados"
-  value       = azurerm_resource_group.net_rg
+  description = "Mapa de todos los IDs de los Resource Groups de red desplegados."
+  value = merge(
+    { for k, v in azurerm_resource_group.hub : k => v.id },
+    { for k, v in azurerm_resource_group.data : k => v.id },
+    { for k, v in azurerm_resource_group.prod : k => v.id }
+  )
 }
 
-
-
 output "vnets" {
-  description = "Diccionario completo de Virtual Networks aprovisionadas"
-  value       = azurerm_virtual_network.vnet
+  description = "Mapa de todos los IDs de las VNets desplegadas."
+  value = merge(
+    { for k, v in azurerm_virtual_network.hub : k => v.id },
+    { for k, v in azurerm_virtual_network.data : k => v.id },
+    { for k, v in azurerm_virtual_network.prod : k => v.id }
+  )
 }
 
 output "subnets" {
-  description = "Diccionario completo de Subredes aplanadas aprovisionadas"
-  value       = azurerm_subnet.subnet
+  description = "Mapa de todos los IDs de las Subredes desplegadas."
+  value = merge(
+    { for k, v in azurerm_subnet.hub : k => v.id },
+    { for k, v in azurerm_subnet.data : k => v.id },
+    { for k, v in azurerm_subnet.prod : k => v.id }
+  )
+}
+
+output "nsgs" {
+  description = "Mapa de todos los IDs de los NSGs desplegados."
+  value = merge(
+    { for k, v in azurerm_network_security_group.hub_nsgs : k => v.id },
+    { for k, v in azurerm_network_security_group.data_nsgs : k => v.id },
+    { for k, v in azurerm_network_security_group.prod_nsgs : k => v.id }
+  )
 }
 
 output "route_tables" {
-  description = "Diccionario con las User Defined Routes (UDRs) creadas para los Spokes"
-  value       = azurerm_route_table.udr
+  description = "Mapa temporalmente vacío para mantener contrato con la raíz."
+  value       = {}
 }
 
 output "vnet_peerings" {
-  description = "Diccionario con los VNet Peerings (Hub-and-Spoke locales) desplegados"
-  value       = azurerm_virtual_network_peering.peerings
-}
-
-
-output "firewall_private_ip" {
-  description = "IP Privada física asignada al Azure Firewall"
-  value       = azurerm_firewall.fw.ip_configuration[0].private_ip_address
+  description = "Mapa de todos los IDs de los VNet Peerings."
+  value = merge(
+    { for k, v in azurerm_virtual_network_peering.hub_to_prod : k => v.id },
+    { for k, v in azurerm_virtual_network_peering.prod_to_hub : k => v.id },
+    { for k, v in azurerm_virtual_network_peering.hub_to_data : k => v.id },
+    { for k, v in azurerm_virtual_network_peering.data_to_hub : k => v.id }
+  )
 }
 
 output "firewall_public_ip" {
-  description = "IP Pública del Azure Firewall"
-  value       = azurerm_public_ip.fw_pip.ip_address
+  description = "Dirección IP Pública del Azure Firewall."
+  value       = azurerm_public_ip.firewall_pip.ip_address
 }
 
 output "bastion_public_ip" {
-  description = "IP Pública del Azure Bastion"
+  description = "Dirección IP Pública de Azure Bastion."
   value       = azurerm_public_ip.bastion_pip.ip_address
+}
+
+output "vpngw_public_ip" {
+  description = "Dirección IP Pública del VPN Gateway."
+  value       = azurerm_public_ip.vpngw_pip.ip_address
 }

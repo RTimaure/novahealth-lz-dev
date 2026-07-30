@@ -71,6 +71,13 @@ module "networking" {
   source               = "./modules/networking"
   target_subscriptions = local.target_subscriptions
 
+  # Mapeo de proveedores hacia el módulo hijo
+  providers = {
+    azurerm.connectivity = azurerm.connectivity
+    azurerm.data_ia      = azurerm.data_ia
+    azurerm.production   = azurerm.production
+  }
+
   # Inyección de las etiquetas obligatorias según política 'LZ-Tagging'
   tags = {
     Environment  = "Prod"
