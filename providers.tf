@@ -1,30 +1,26 @@
-
 # Archivo: providers.tf
 
 terraform {
+  required_version = ">= 1.5.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
-      
     }
     azuread = {
       source  = "hashicorp/azuread"
       version = "~> 2.0"
     }
-   
   }
 }
 
-# Proveedor por defecto
 provider "azurerm" {
   features {}
-   skip_provider_registration = true
 }
 
-# ---------------------------------------------------------
-# ALIAS MULTI-SUSCRIPCIÓN PARA LANDING ZONES
-# ---------------------------------------------------------
+provider "azuread" {}
+
+# Aliases de proveedores para las 5 suscripciones físicas de la Demo
 provider "azurerm" {
   alias           = "connectivity"
   subscription_id = local.target_subscriptions["connectivity"]
@@ -32,8 +28,14 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "data_ia"
-  subscription_id = local.target_subscriptions["data_ai"]
+  alias           = "identity"
+  subscription_id = local.target_subscriptions["identity"]
+  features {}
+}
+
+provider "azurerm" {
+  alias           = "management"
+  subscription_id = local.target_subscriptions["management"]
   features {}
 }
 
@@ -44,7 +46,16 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "management"
-  subscription_id = local.target_subscriptions["management"]
+  alias           = "data_ai"
+  subscription_id = local.target_subscriptions["data_ai"]
   features {}
 }
+
+# ¡AÑADE ESTE BLOQUE TEMPORAL ABAJO!
+# Usará el mismo ID de suscripción, pero con el nombre que el estado viejo busca
+provider "azurerm" {
+  alias           = "data_ia"
+  subscription_id = local.target_subscriptions["data_ai"] 
+  features {}
+}
+

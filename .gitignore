@@ -25,3 +25,5 @@ terraform.rc
 
 # Exclude Terraform plan output files, which can contain sensitive data, such as provider
 *.tfplan
+# exclude data sources
+source/

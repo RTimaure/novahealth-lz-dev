@@ -1,100 +1,150 @@
 # Archivo: modules/policy/definitions_lz_tagging.tf
 
-# -------------------------------------------------------------------------
-# 1. DIRECTIVAS DE ETIQUETADO OBLIGATORIO (MODULAR CON FOR_EACH)
-# -------------------------------------------------------------------------
-
-locals {
-  required_tags = {
-    "Environment" = {
-      display_name = "Require Tag: Environment"
-      description  = "Obliga el tag Environment para identificación del entorno (Prod/Dev/QA/Sandbox)"
-    }
-    "BusinessUnit" = {
-      display_name = "Require Tag: BusinessUnit"
-      description  = "Obliga el tag BusinessUnit para asignación de costes por área de negocio"
-    }
-    "CostCenter" = {
-      display_name = "Require Tag: CostCenter"
-      description  = "Obliga el tag CostCenter para trazabilidad financiera y control de costes"
-    }
-    "Criticality" = {
-      display_name = "Require Tag: Criticality"
-      description  = "Obliga el tag Criticality para clasificación y priorización de recursos"
-    }
-    "Region" = {
-      display_name = "Require Tag: Region"
-      description  = "Obliga el tag Region para identificar la ubicación del recurso (RGPD)"
-    }
-  }
-}
-
-resource "azurerm_policy_definition" "require_tags" {
-  for_each = local.required_tags
-
-  name                = "nh-req-tag-${lower(each.key)}"
-  policy_type         = "Custom"
-  mode                = "Indexed"
-  display_name        = each.value.display_name
-  description         = each.value.description
-  management_group_id = var.root_mg_id
-
-  metadata = <<METADATA
-    {
-      "category": "LZ-Tagging",
-      "version": "1.0.0"
-    }
-METADATA
-
-  policy_rule = <<RULE
-    {
-      "if": {
-        "field": "tags['${each.key}']",
-        "exists": "false"
-      },
-      "then": {
-        "effect": "deny"
-      }
-    }
-RULE
-}
-
-# -------------------------------------------------------------------------
-# 2. DIRECTIVA DE CONVENCIÓN DE NOMBRES CORPORATIVA
-# -------------------------------------------------------------------------
-
-resource "azurerm_policy_definition" "naming_convention" {
+# ==============================================================================
+# 1. POLÍTICA DE CONVENCIÓN DE NOMBRES (CLUSTERS C1, C2, C3, C4)
+# ==============================================================================
+resource "azurerm_policy_definition" "enforce_naming" {
   name                = "nh-enforce-naming"
   policy_type         = "Custom"
-  mode                = "Indexed"
-  display_name        = "Enforce Resource Naming Convention"
-  description         = "Valida que los recursos cumplan el patrón corporativo <tipo>-<app>-<env>-<region>-<num>"
+  mode                = "All"
+  display_name        = "Enforce Naming Convention (Clusters C1-C4)"
+  description         = "Aplica la convención de nomenclatura corporativa de NovaHealth: C1 (4 segmentos), C2 (5 segmentos), C3 (3 segmentos), C4 Storage Accounts (sin guiones)."
   management_group_id = var.root_mg_id
 
   metadata = <<METADATA
     {
-      "category": "LZ-Tagging",
-      "version": "1.0.0"
+      "category": "Tagging and Naming",
+      "version": "2.0.0"
     }
-METADATA
+  METADATA
 
-  policy_rule = <<RULE
-    {
-      "if": {
-        "anyOf": [
-          {
-            "value": "[length(split(field('name'), '-'))]",
-            "notEquals": 5
-          },
-          {
-            "value": "[substring(field('name'), sub(length(field('name')), 3), 3)]",
-            "notMatch": "###"
-          }
-        ]
-      },
-      "then": {
-        "effect": "deny"
-      }
+  policy_rule = <<POLICY_RULE
+  {
+    "if": {
+      "anyOf": [
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "in": [
+                "Microsoft.Resources/subscriptions/resourceGroups",
+                "Microsoft.Network/virtualNetworks",
+                "Microsoft.Network/routeTables",
+                "Microsoft.Network/applicationGateways",
+                "Microsoft.Sql/servers/databases",
+                "Microsoft.ContainerRegistry/registries",
+                "Microsoft.OperationalInsights/workspaces",
+                "microsoft.insights/workbooks",
+                "microsoft.insights/actionGroups"
+              ]
+            },
+            {
+              "value": "[length(split(field('name'), '-'))]",
+              "notEquals": 4
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "in": [
+                "Microsoft.Network/virtualNetworks/subnets",
+                "Microsoft.Compute/virtualMachines",
+                "Microsoft.KeyVault/vaults",
+                "Microsoft.Network/networkSecurityGroups",
+                "Microsoft.Network/publicIPAddresses",
+                "Microsoft.Network/privateEndpoints"
+              ]
+            },
+            {
+              "field": "name",
+              "notIn": ["AzureFirewallSubnet", "GatewaySubnet", "AzureBastionSubnet"]
+            },
+            {
+              "value": "[length(split(field('name'), '-'))]",
+              "notEquals": 5
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "in": [
+                "Microsoft.Network/virtualNetworkGateways",
+                "Microsoft.Network/azureFirewalls",
+                "Microsoft.Network/firewallPolicies",
+                "Microsoft.Network/bastionHosts"
+              ]
+            },
+            {
+              "value": "[length(split(field('name'), '-'))]",
+              "notEquals": 3
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "equals": "Microsoft.Storage/storageAccounts"
+            },
+            {
+              "field": "name",
+              "contains": "-"
+            }
+          ]
+        }
+      ]
+    },
+    "then": {
+      "effect": "Deny"
     }
-RULE
+  }
+  POLICY_RULE
+}
+
+# ==============================================================================
+# 2. POLÍTICA DE ETIQUETAS OBLIGATORIAS (7 TAGS CORPORATIVOS)
+# ==============================================================================
+resource "azurerm_policy_definition" "require_mandatory_tags" {
+  name                = "nh-require-mandatory-tags"
+  policy_type         = "Custom"
+  mode                = "Indexed"
+  display_name        = "Require Mandatory Tags (NovaHealth 7 Fields)"
+  description         = "Exige la presencia de las 7 etiquetas corporativas (environment, owner, cost-center, project, businessUnit, criticality, region) y valida que el owner comience con grp-novahealth-*."
+  management_group_id = var.root_mg_id
+
+  metadata = <<METADATA
+    {
+      "category": "Tagging and Naming",
+      "version": "2.0.0"
+    }
+  METADATA
+
+  policy_rule = <<POLICY_RULE
+  {
+    "if": {
+      "anyOf": [
+        { "field": "tags['environment']", "exists": "false" },
+        { "field": "tags['owner']", "exists": "false" },
+        {
+          "allOf": [
+            { "field": "tags['owner']", "exists": "true" },
+            { "field": "tags['owner']", "notLike": "grp-novahealth-*" }
+          ]
+        },
+        { "field": "tags['cost-center']", "exists": "false" },
+        { "field": "tags['project']", "exists": "false" },
+        { "field": "tags['businessUnit']", "exists": "false" },
+        { "field": "tags['criticality']", "exists": "false" },
+        { "field": "tags['region']", "exists": "false" }
+      ]
+    },
+    "then": {
+      "effect": "Deny"
+    }
+  }
+  POLICY_RULE
 }

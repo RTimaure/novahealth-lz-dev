@@ -1,4 +1,4 @@
-# Archivo: modules/networking/providers.tf
+# Archivo: modules/resource_groups/providers.tf
 
 terraform {
   required_providers {

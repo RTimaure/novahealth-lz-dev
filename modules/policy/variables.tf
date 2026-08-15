@@ -1,22 +1,36 @@
 # Archivo: modules/policy/variables.tf
 
 variable "root_mg_id" {
+  description = "ID del Management Group raíz"
   type        = string
-  description = "ID del Management Group raíz de NovaHealth (nh-root)"
-}
-
-variable "landing_zones_mg_id" {
-  type        = string
-  description = "ID del Management Group de Landing Zones (nh-landing-zones)"
 }
 
 variable "platform_mg_id" {
+  description = "ID del Management Group Platform"
   type        = string
-  description = "ID del Management Group de Platform (nh-platform)"
+  default     = null
+}
+
+variable "landing_zones_mg_id" {
+  description = "ID del Management Group Landing Zones"
+  type        = string
+  default     = null
+}
+
+variable "management_group_ids" {
+  description = "Mapa completo de IDs de Management Groups"
+  type        = map(string)
+  default     = {}
 }
 
 variable "target_subscriptions" {
+  description = "Mapa de suscripciones objetivo"
   type        = map(string)
-  description = "Mapa de suscripciones objetivo desde el orquestador raíz"
   default     = {}
+}
+
+variable "allowed_locations" {
+  description = "Lista de regiones permitidas por Azure Policy"
+  type        = list(string)
+  default     = ["swedencentral", "westeurope"]
 }

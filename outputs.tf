@@ -1,43 +1,37 @@
-# Archivo: outputs.tf
+# Archivo: modules/networking/outputs.tf
 
-# Salidas de la jerarquía
-output "management_group_ids" {
-  description = "IDs de los Management Groups creados."
-  value       = module.management_groups.management_group_ids
-}
-
-# Salidas de Gobernanza Financiera
-output "finops_budgets" {
-  description = "Resumen de los presupuestos configurados."
-  value       = module.finops.finops_summary
-}
-
-# Salidas de Seguridad
-output "custom_policy_definition_ids" {
-  description = "IDs de las definiciones de políticas personalizadas creadas."
-  value       = module.policy.custom_policy_definition_ids
-}
-
-# Salidas de Identidad / Acceso
-output "rbac_group_ids" {
-  description = "IDs de los grupos de Azure Entra ID creados."
-  value       = module.rbac.entra_group_ids
-}
-
-# =========================================================================
-# OUTPUTS DEL MÓDULO DE RED (IPAM REFACCIONADO)
-# =========================================================================
-output "lz_vnets" {
-  description = "Diccionario global de todas las Redes Virtuales desplegadas (Prod, Non-Prod, DR, On-Prem)."
+output "vnet_ids" {
+  description = "Mapa global de IDs de las Redes Virtuales desplegadas (Hub, Data e Infraestructura)"
   value       = module.networking.vnets
 }
 
-output "lz_subnets" {
-  description = "Diccionario global de todas las Subredes desplegadas, listas para consumo de otros módulos."
+output "subnet_ids" {
+  description = "Mapa global de IDs de las Subredes desplegadas"
   value       = module.networking.subnets
 }
 
-output "lz_network_resource_groups" {
-  description = "Diccionario de los grupos de recursos de red."
-  value       = module.networking.resource_groups
+output "nsg_ids" {
+  description = "Mapa global de IDs de los Network Security Groups desplegados"
+  value       = module.networking.nsgs
 }
+
+output "vnet_peering_ids" {
+  description = "Mapa global de IDs de las conexiones VNet Peering"
+  value       = module.networking.vnet_peerings
+}
+
+output "firewall_public_ip" {
+  description = "IP pública del Azure Firewall Perimetral"
+  value       = module.networking.firewall_public_ip
+}
+
+output "bastion_public_ip" {
+  description = "IP pública del Azure Bastion Host"
+  value       = module.networking.bastion_public_ip
+}
+
+output "appgw_public_ip" {
+  description = "IP pública del Application Gateway WAF"
+  value       = null
+}
+

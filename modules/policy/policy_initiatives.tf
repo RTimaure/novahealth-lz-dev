@@ -70,20 +70,18 @@ resource "azurerm_policy_set_definition" "lz_data" {
 resource "azurerm_policy_set_definition" "lz_tagging" {
   name                = "nh-ini-lz-tagging"
   policy_type         = "Custom"
-  display_name        = "NovaHealth Initiative: LZ Governance Tagging & Naming"
-  description         = "Obliga etiquetas corporativas obligatorias y convención de nombres"
+  display_name        = "NovaHealth LZ Tagging and Naming Initiative"
+  description         = "Iniciativa que agrupa la convención de nomenclatura (Clusters C1-C4) y los 7 tags corporativos obligatorios."
   management_group_id = var.root_mg_id
 
-  dynamic "policy_definition_reference" {
-    for_each = azurerm_policy_definition.require_tags
-    content {
-      policy_definition_id = policy_definition_reference.value.id
-      reference_id         = "ReqTag${policy_definition_reference.key}"
-    }
-  }
   policy_definition_reference {
-    policy_definition_id = azurerm_policy_definition.naming_convention.id
+    policy_definition_id = azurerm_policy_definition.enforce_naming.id
     reference_id         = "EnforceNamingConvention"
+  }
+
+  policy_definition_reference {
+    policy_definition_id = azurerm_policy_definition.require_mandatory_tags.id
+    reference_id         = "RequireMandatoryTags"
   }
 }
 

@@ -1,6 +1,12 @@
 # Archivo: modules/subscriptions/outputs.tf
 
 output "subscription_ids" {
-  description = "Mapa normalizado con los IDs de las suscripciones procesadas"
-  value       = var.use_enterprise_subscriptions ? var.enterprise_subscriptions : { student = var.student_subscription_id }
+  description = "Mapa unificado de IDs de suscripciones activas (Enterprise o Estudiante)"
+  value       = var.use_enterprise_subscriptions ? var.enterprise_subscriptions : {
+    connectivity = var.student_subscription_id
+    identity     = var.student_subscription_id
+    management   = var.student_subscription_id
+    production   = var.student_subscription_id
+    data_ai      = var.student_subscription_id
+  }
 }

@@ -29,6 +29,29 @@ variable "location" {
   }
 }
 
+variable "primary_location" {
+  type        = string
+  description = "Región base de primary usada por módulos que distinguen primary y DR."
+  default     = "swedencentral"
+}
+
+variable "dr_location" {
+  type        = string
+  description = "Región base de Disaster Recovery usada por módulos que distinguen primary y DR."
+  default     = "westeurope"
+}
+
+variable "deployment_scope" {
+  type        = string
+  description = "Alcance del despliegue: primary o dr."
+  default     = "primary"
+
+  validation {
+    condition     = contains(["primary", "dr"], var.deployment_scope)
+    error_message = "deployment_scope debe ser 'primary' o 'dr'."
+  }
+}
+
 variable "cicd_service_principal_object_id" {
   type    = string
   default = "" # O el valor que corresponda
@@ -38,4 +61,10 @@ variable "subscription_to_mg" {
   type        = map(string)
   description = "Para asociar cada suscripción con su Management Group correspondiente. Clave: nombre de la suscripción, Valor: ID del Management Group."
 
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Etiquetas aplicadas a los recursos"
+  default     = {}
 }

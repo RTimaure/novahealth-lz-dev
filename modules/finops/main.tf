@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.90.0"
+      version = "~> 3.0"
     }
   }
 }
@@ -89,7 +89,7 @@ resource "azurerm_consumption_budget_subscription" "lz_budgets" {
   time_grain = "Monthly"
 
   time_period {
-    start_date = "2026-07-01T00:00:00Z"
+    start_date = "2026-08-01T00:00:00Z"
     end_date   = "2030-12-31T00:00:00Z"
   }
 

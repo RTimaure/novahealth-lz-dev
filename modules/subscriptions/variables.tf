@@ -1,29 +1,31 @@
+
+
 # Archivo: modules/subscriptions/variables.tf
 
-variable "use_enterprise_subscriptions" {
-  type        = bool
-  description = "Define si se opera en modo BYOS Enterprise (true) o en Modo Estudiante (false)"
+variable "management_group_ids" {
+  description = "Mapa de IDs de los Management Groups creados"
+  type        = map(string)
 }
 
-variable "student_subscription_id" {
-  type        = string
-  description = "ID de la suscripción de estudiante para mover bajo nh-root"
-  default     = ""
+variable "use_enterprise_subscriptions" {
+  description = "Flag para habilitar asociaciones empresariales BYOS"
+  type        = bool
 }
 
 variable "enterprise_subscriptions" {
+  description = "Mapa de nombres a IDs de suscripciones empresariales"
   type        = map(string)
-  description = "Mapa con los IDs de las suscripciones empresariales para BYOS"
-  default     = {}
-}
-
-variable "management_group_ids" {
-  type        = map(string)
-  description = "Mapa con los IDs de los Management Groups generados en la Capa 1"
   default     = {}
 }
 
 variable "subscription_to_mg" {
-  description = "Mapa de asignación entre suscripciones y Management Groups."
+  description = "Mapa que asocia cada clave de suscripción con su Management Group correspondiente"
   type        = map(string)
+  default     = {}
+}
+
+variable "student_subscription_id" {
+  description = "ID de la suscripción de estudiante para modo pruebas"
+  type        = string
+  default     = ""
 }

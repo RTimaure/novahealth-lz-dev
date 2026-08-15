@@ -11,7 +11,8 @@ output "custom_policy_definition_ids" {
     enforce_azure_firewall = azurerm_policy_definition.enforce_azure_firewall.id
     require_pe_storage     = azurerm_policy_definition.require_pe_storage.id
     require_pe_kv          = azurerm_policy_definition.require_pe_kv.id
-    naming_convention      = azurerm_policy_definition.naming_convention.id
+    #naming_convention      = azurerm_policy_definition.naming_convention.id
+    naming_convention      = azurerm_policy_definition.enforce_naming.id
   }
 }
 
