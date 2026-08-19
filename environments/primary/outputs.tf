@@ -37,3 +37,13 @@ output "vpngw_public_ip" {
 output "data_subnets" {
 	value = module.networking.data_subnets
 }
+
+output "log_analytics_workspace_id" {
+	value = module.observability.log_analytics_workspace_id
+}
+
+output "application_insights_connection_string" {
+	value     = module.observability.application_insights_connection_string
+	sensitive = true
+}
+

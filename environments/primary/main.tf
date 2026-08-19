@@ -111,3 +111,18 @@ module "finops" {
 
 	depends_on = [module.networking]
 }
+
+module "observability" {
+	source = "../../modules/observability"
+
+	location             = var.location
+	resource_group_names = module.resource_groups.rg_names
+	tags                 = var.tags
+	notification_email   = "ops-alerts@novahealth.com"
+
+	providers = {
+		azurerm = azurerm.management
+	}
+
+	depends_on = [module.resource_groups]
+}

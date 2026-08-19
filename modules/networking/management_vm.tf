@@ -11,7 +11,7 @@ resource "azurerm_network_interface" "mngt_vm_nic" {
   provider            = azurerm.connectivity
   name                = "nic-mngt-prod-swe-001"
   location            = var.location
-  resource_group_name = lookup(var.resource_group_names, "rg-mngt-prod-swe", "rg-mngt-prod-swe")
+  resource_group_name = lookup(var.resource_group_names, "rg-mgmt-vm-prod-swe", "rg-mgmt-vm-prod-swe")
   tags                = var.tags
 
   ip_configuration {

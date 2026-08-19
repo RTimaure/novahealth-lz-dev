@@ -163,9 +163,13 @@ locals {
   data_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_prod" }
   data_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_nprod" }
 
-  # --- PROD (aks/apps/shared): ya usa provider=production para ambos envs, no requiere split ---
-  prod_vnets   = { for k, v in local.vnets : k => v if length(regexall("^(aks|apps|shared)", k)) > 0 }
-  prod_subnets = { for k, v in local.subnet_map : k => v if length(regexall("^(aks|apps|shared)", v.vnet_key)) > 0 }
+    # --- PROD (aks/apps): usa provider=production ---
+  prod_vnets   = { for k, v in local.vnets : k => v if length(regexall("^(aks|apps)", k)) > 0 || k == "shared_nprod" }
+  prod_subnets = { for k, v in local.subnet_map : k => v if length(regexall("^(aks|apps)", v.vnet_key)) > 0 || v.vnet_key == "shared_nprod" }
+
+  # --- SHARED SERVICES PROD: asignado a Platform Services (data_ai) ---
+  shared_vnets_prod   = { for k, v in local.vnets : k => v if k == "shared_prod" }
+  shared_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "shared_prod" }
 
   # Para los peerings hub->prod, necesitamos saber qué entradas de prod_vnets son env prod vs nprod
   prod_vnets_envprod  = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) == 0 }
@@ -363,7 +367,49 @@ resource "azurerm_subnet_network_security_group_association" "data_nprod" {
 }
 
 # =========================================================================
-# DOMINIO PRODUCCIÓN (aks/apps/shared) — SIN CAMBIOS
+# DOMINIO SHARED SERVICES — PROD (SUSCRIPCIÓN: PLATFORM SERVICES / DATA_AI)
+# =========================================================================
+resource "azurerm_virtual_network" "shared_prod" {
+  provider            = azurerm.data_ai
+  for_each            = local.shared_vnets_prod
+  name                = each.value.name
+  location            = var.location
+  resource_group_name = each.value.rg_name
+  address_space       = each.value.address_space
+  tags                = var.tags
+}
+
+resource "azurerm_subnet" "shared_prod" {
+  provider             = azurerm.data_ai
+  for_each             = local.shared_subnets_prod
+  name                 = each.value.subnet_name
+  resource_group_name  = each.value.rg_name
+  virtual_network_name = azurerm_virtual_network.shared_prod[each.value.vnet_key].name
+  address_prefixes     = [each.value.subnet_cidr]
+}
+
+resource "azurerm_network_security_group" "shared_nsgs_prod" {
+  provider            = azurerm.data_ai
+  for_each            = local.shared_subnets_prod
+  name                = replace(each.value.subnet_name, "snet-", "nsg-")
+  location            = var.location
+  resource_group_name = each.value.rg_name
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "shared_prod" {
+  provider                  = azurerm.data_ai
+  for_each                  = azurerm_network_security_group.shared_nsgs_prod
+  subnet_id                 = azurerm_subnet.shared_prod[each.key].id
+  network_security_group_id = each.value.id
+
+  depends_on = [
+    azurerm_network_security_rule.prod_rules
+  ]
+}
+
+# =========================================================================
+# DOMINIO PRODUCCIÓN (aks/apps/shared_nprod) — SUSCRIPCIÓN PRODUCTION
 # =========================================================================
 resource "azurerm_virtual_network" "prod" {
   provider            = azurerm.production

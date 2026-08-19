@@ -46,12 +46,27 @@ module "networking" {
 		}
 	)
 
-	providers = {
+		providers = {
 		azurerm.connectivity = azurerm.connectivity
 		azurerm.identity     = azurerm.identity
 		azurerm.management   = azurerm.management
 		azurerm.production   = azurerm.production
 		azurerm.data_ai      = azurerm.data_ai
+	}
+
+	depends_on = [module.resource_groups]
+}
+
+module "observability" {
+	source = "../../modules/observability"
+
+	location             = var.location
+	resource_group_names = module.resource_groups.rg_names
+	tags                 = var.tags
+	notification_email   = "ops-alerts@novahealth.com"
+
+	providers = {
+		azurerm = azurerm.management
 	}
 
 	depends_on = [module.resource_groups]

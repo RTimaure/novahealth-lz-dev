@@ -469,7 +469,7 @@ resource "azurerm_subnet_route_table_association" "apps_nprod" {
 # 9. SHARED SERVICES SPOKE - PROD (SUSCRIPCIÓN: PRODUCTION)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "shared_prod" {
-  provider                      = azurerm.production
+  provider                      = azurerm.data_ai
   name                          = "rt-shared-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-shared-prod-swe", "rg-network-shared-prod-swe")
@@ -513,13 +513,13 @@ resource "azurerm_route_table" "shared_prod" {
 }
 
 resource "azurerm_subnet_route_table_association" "shared_prod" {
-  provider = azurerm.production
+  provider = azurerm.data_ai
   for_each = toset([
     "shared_prod_snet-sharedapim-prod-swe-001",
     "shared_prod_snet-shareddevops-prod-swe-001"
   ])
 
-  subnet_id      = azurerm_subnet.prod[each.key].id
+  subnet_id      = azurerm_subnet.shared_prod[each.key].id
   route_table_id = azurerm_route_table.shared_prod.id
 }
 
