@@ -15,8 +15,14 @@ variable "resource_group_names" {
   type        = map(string)
 }
 
+variable "resource_group_tags" {
+  description = "Mapa global de etiquetas de Resource Groups provenientes del módulo resource_groups"
+  type        = map(map(string))
+  default     = {}
+}
+
 variable "tags" {
-  description = "Etiquetas corporativas de gobernanza"
+  description = "Etiquetas corporativas de gobernanza por defecto"
   type        = map(string)
   default     = {}
 }

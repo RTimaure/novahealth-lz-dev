@@ -71,7 +71,7 @@ resource "azurerm_policy_set_definition" "lz_tagging" {
   name                = "nh-ini-lz-tagging"
   policy_type         = "Custom"
   display_name        = "NovaHealth LZ Tagging and Naming Initiative"
-  description         = "Iniciativa que agrupa la convención de nomenclatura (Clusters C1-C4) y los 7 tags corporativos obligatorios."
+  description         = "Iniciativa que agrupa la convención de nomenclatura (Clusters C1-C6) y los 7 tags corporativos obligatorios."
   management_group_id = var.root_mg_id
 
   policy_definition_reference {
@@ -90,12 +90,22 @@ resource "azurerm_policy_set_definition" "lz_cost_control" {
   name                = "nh-ini-lz-cost"
   policy_type         = "Custom"
   display_name        = "NovaHealth Initiative: LZ Cost Control"
-  description         = "Controles financieros y auditoría de alertas de presupuesto"
+  description         = "Controles financieros, auditoría de alertas de presupuesto, tipos de recursos permitidos y restricción de SKUs de VMs"
   management_group_id = var.root_mg_id
 
   policy_definition_reference {
     policy_definition_id = azurerm_policy_definition.lz_cost_control["audit_budget_alerts"].id
     reference_id         = "AuditBudgetAlerts"
+  }
+
+  policy_definition_reference {
+    policy_definition_id = azurerm_policy_definition.lz_cost_control["allowed_vm_skus"].id
+    reference_id         = "AllowedVMSKUs"
+  }
+
+  policy_definition_reference {
+    policy_definition_id = azurerm_policy_definition.lz_cost_control["allowed_resource_types"].id
+    reference_id         = "AllowedResourceTypes"
   }
 }
 

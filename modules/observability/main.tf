@@ -12,19 +12,8 @@ locals {
   # Mapeo de región para sufijo si var.location varía
   region_suffix = lower(var.location) == "swedencentral" ? "swe" : (lower(var.location) == "westeurope" ? "weu" : "swe")
 
-  # 7 Tags obligatorios de NovaHealth (Gobernanza)
-  observability_tags = merge(
-    var.tags,
-    {
-      environment  = lookup(var.tags, "environment", "prod")
-      owner        = "grp-novahealth-ops-team"
-      cost-center  = "IT-004"
-      project      = "NovaHealth-LandingZone"
-      businessUnit = "FinOps"
-      criticality  = "High"
-      region       = lower(var.location) == "swedencentral" ? "SwedenCentral" : "WestEurope"
-    }
-  )
+  # Tags dinámicos obtenidos directamente del Resource Group o combinados con var.tags
+  observability_tags = lookup(var.resource_group_tags, "rg-monitoring-prod-swe", var.tags)
 }
 
 # -------------------------------------------------------------------------

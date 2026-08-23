@@ -1,20 +1,27 @@
 # Archivo: modules/policy/definitions_lz_tagging.tf
 
 # ==============================================================================
-# 1. POLÍTICA DE CONVENCIÓN DE NOMBRES (CLUSTERS C1, C2, C3, C4)
+# 1. POLÍTICA DE CONVENCIÓN DE NOMBRES (CLUSTERS C1 A C6)
+# ==============================================================================
+# C1: <prefix>-<scope>-<environment>-<region> (4 segmentos) -> Resource Group, VNet, Route Table, App Gateway, SQL Database, ACR, Log Analytics, Workbook, Action Group
+# C2: <prefix>-<source>-<target>-<environment>-<region> (5 segmentos) -> VNet Peering
+# C3: <prefix>-<scope>-<subnet>-<environment>-<region> (5 segmentos) -> Subnet, NSG (Excepciones built-in: AzureFirewallSubnet, GatewaySubnet, AzureBastionSubnet)
+# C4: <prefix>-<scope>-<environment>-<region>-<nnn> (5 segmentos) -> Virtual Machine, Key Vault, Public IP, Private Endpoint
+# C5: <prefix>-<environment>-<region> (3 segmentos) -> Azure Firewall, Firewall Policy, VPN Gateway, Bastion, DNS Private Resolver
+# C6: <prefix><scope><environment><nnn> (alfanumérico sin guiones) -> Storage Account
 # ==============================================================================
 resource "azurerm_policy_definition" "enforce_naming" {
   name                = "nh-enforce-naming"
   policy_type         = "Custom"
   mode                = "All"
-  display_name        = "Enforce Naming Convention (Clusters C1-C4)"
-  description         = "Aplica la convención de nomenclatura corporativa de NovaHealth: C1 (4 segmentos), C2 (5 segmentos), C3 (3 segmentos), C4 Storage Accounts (sin guiones)."
+  display_name        = "Enforce Naming Convention (Clusters C1-C6)"
+  description         = "Aplica la convención de nomenclatura corporativa de NovaHealth: C1 (Ámbito: 4 segs), C2 (Relaciones/Peering: 5 segs), C3 (Subnet/NSG: 5 segs), C4 (Multi-instancia: 5 segs), C5 (Transversales únicos: 3 segs), C6 (Storage: alfanumérico sin guiones)."
   management_group_id = var.root_mg_id
 
   metadata = <<METADATA
     {
       "category": "Tagging and Naming",
-      "version": "2.0.0"
+      "version": "3.0.0"
     }
   METADATA
 
@@ -49,12 +56,22 @@ resource "azurerm_policy_definition" "enforce_naming" {
             {
               "field": "type",
               "in": [
+                "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+              ]
+            },
+            {
+              "value": "[length(split(field('name'), '-'))]",
+              "notEquals": 5
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "in": [
                 "Microsoft.Network/virtualNetworks/subnets",
-                "Microsoft.Compute/virtualMachines",
-                "Microsoft.KeyVault/vaults",
-                "Microsoft.Network/networkSecurityGroups",
-                "Microsoft.Network/publicIPAddresses",
-                "Microsoft.Network/privateEndpoints"
+                "Microsoft.Network/networkSecurityGroups"
               ]
             },
             {
@@ -72,10 +89,28 @@ resource "azurerm_policy_definition" "enforce_naming" {
             {
               "field": "type",
               "in": [
-                "Microsoft.Network/virtualNetworkGateways",
+                "Microsoft.Compute/virtualMachines",
+                "Microsoft.KeyVault/vaults",
+                "Microsoft.Network/publicIPAddresses",
+                "Microsoft.Network/privateEndpoints"
+              ]
+            },
+            {
+              "value": "[length(split(field('name'), '-'))]",
+              "notEquals": 5
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "field": "type",
+              "in": [
                 "Microsoft.Network/azureFirewalls",
                 "Microsoft.Network/firewallPolicies",
-                "Microsoft.Network/bastionHosts"
+                "Microsoft.Network/virtualNetworkGateways",
+                "Microsoft.Network/bastionHosts",
+                "Microsoft.Network/dnsResolvers"
               ]
             },
             {
@@ -111,9 +146,9 @@ resource "azurerm_policy_definition" "enforce_naming" {
 resource "azurerm_policy_definition" "require_mandatory_tags" {
   name                = "nh-require-mandatory-tags"
   policy_type         = "Custom"
-  mode                = "Indexed"
+  mode                = "All"
   display_name        = "Require Mandatory Tags (NovaHealth 7 Fields)"
-  description         = "Exige la presencia de las 7 etiquetas corporativas (environment, owner, cost-center, project, businessUnit, criticality, region) y valida que el owner comience con grp-novahealth-*."
+  description         = "Exige la presencia de las 7 etiquetas corporativas (environment, owner, cost-center, project, businessUnit, criticality, region) tanto en Resource Groups como en recursos, y valida que el owner comience con grp-novahealth-*."
   management_group_id = var.root_mg_id
 
   metadata = <<METADATA

@@ -10,8 +10,14 @@ variable "resource_group_names" {
   type        = map(string)
 }
 
+variable "resource_group_tags" {
+  description = "Mapa de etiquetas de Resource Groups exportados por el módulo de resource_groups"
+  type        = map(map(string))
+  default     = {}
+}
+
 variable "tags" {
-  description = "Mapa de 7 etiquetas corporativas obligatorias de NovaHealth"
+  description = "Mapa de etiquetas corporativas de NovaHealth"
   type        = map(string)
   default     = {}
 }
@@ -26,4 +32,23 @@ variable "notification_email" {
   description = "Email principal para recepcionar alertas de la plataforma NovaHealth"
   type        = string
   default     = "ops-alerts@novahealth.com"
+}
+
+
+# 🆕 AÑADE ESTA VARIABLE (Controlará los counts de forma segura)
+variable "enabled_features" {
+  type = object({
+    firewall            = bool
+    application_gateway = bool
+    vpn_gateway         = bool
+    bastion             = bool
+    dns_resolver        = bool
+  })
+  default = {
+    firewall            = true
+    application_gateway = true
+    vpn_gateway         = true
+    bastion             = true
+    dns_resolver        = true
+  }
 }

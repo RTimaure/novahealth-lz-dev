@@ -28,9 +28,11 @@ locals {
     for sub_key, sub_id in var.enterprise_subscriptions :
     sub_key => {
       subscription_id = sub_id
-      management_group_id = var.management_group_ids[
-        var.subscription_to_mg[sub_key]
-      ]
+      management_group_id = lookup(
+        var.management_group_ids,
+        lookup(var.subscription_to_mg, sub_key, ""),
+        "/providers/Microsoft.Management/managementGroups/${lookup(var.subscription_to_mg, sub_key, "nh-root")}"
+      )
     }
     if sub_id != "" && sub_id != null
   }

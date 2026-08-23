@@ -10,6 +10,14 @@ terraform {
 			version = "~> 2.0"
 		}
 	}
+
+	  # ESTE ES EL BLOQUE CLAVE PARA COMPARTIR EL ESTADO
+	backend "azurerm" {
+    resource_group_name  = "rg-terraform-tfm-state"     # El grupo que creó en el Paso 1
+    storage_account_name = "sttfmstateshared"           # El nombre de nuestro Storage Account
+    container_name       = "terraform-state"            # El nombre del contenedor
+    key                  = "landingzone.tfstate"        # El nombre que tendrá el archivo en la nube
+  }
 }
 
 provider "azurerm" {

@@ -74,22 +74,11 @@ module "networking" {
 	location             = var.location
 	target_subscriptions = local.target_subscriptions
 	resource_group_names = module.resource_groups.rg_names
+	resource_group_tags  = module.resource_groups.rg_tags
 
 	enable_global_peering = var.enable_global_peering
 	remote_hub_vnet_id    = var.remote_hub_vnet_id
-
-	tags = merge(
-		var.tags,
-		{
-			environment  = "primary"
-			project      = "NovaHealth-LandingZone"
-			region       = "SwedenCentral"
-			cost-center  = "IT-001"
-			businessUnit = "HospitalSystems"
-			criticality  = "Critical"
-			owner        = "grp-novahealth-network-team"
-		}
-	)
+	tags                  = var.tags
 
 	providers = {
 		azurerm.connectivity = azurerm.connectivity
@@ -117,12 +106,30 @@ module "observability" {
 
 	location             = var.location
 	resource_group_names = module.resource_groups.rg_names
+	resource_group_tags  = module.resource_groups.rg_tags
 	tags                 = var.tags
 	notification_email   = "ops-alerts@novahealth.com"
+
+	diagnostic_target_resources = {
+		firewall_id            = module.networking.firewall_id
+		application_gateway_id = module.networking.application_gateway_id
+		vpn_gateway_id         = module.networking.vpn_gateway_id
+		bastion_id             = module.networking.bastion_id
+		dns_resolver_id        = module.networking.dns_resolver_id
+	}
+
+	# 🆕(Dile a Terraform explícitamente qué recursos existen)
+  	enabled_features = {
+		firewall            = true
+		application_gateway = true
+		vpn_gateway         = true
+		bastion             = true
+		dns_resolver        = true
+  	}	
 
 	providers = {
 		azurerm = azurerm.management
 	}
 
-	depends_on = [module.resource_groups]
+	depends_on = [module.resource_groups, module.networking]
 }

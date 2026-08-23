@@ -13,8 +13,8 @@ resource "azurerm_route_table" "hub_mngt_prod" {
   name                          = "rt-mngt-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-hub-prod-swe", "rg-network-hub-prod-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-hub-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -66,8 +66,8 @@ resource "azurerm_route_table" "hub_mngt_nprod" {
   name                          = "rt-mngt-nprod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -119,8 +119,8 @@ resource "azurerm_route_table" "aks_prod" {
   name                          = "rt-aks-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-aks-prod-swe", "rg-network-aks-prod-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-aks-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -179,8 +179,8 @@ resource "azurerm_route_table" "aks_nprod" {
   name                          = "rt-aks-nprod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -239,8 +239,8 @@ resource "azurerm_route_table" "data_prod" {
   name                          = "rt-dataai-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dataai-prod-swe", "rg-network-dataai-prod-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dataai-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -298,8 +298,8 @@ resource "azurerm_route_table" "data_nprod" {
   name                          = "rt-dataai-nprod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -357,8 +357,8 @@ resource "azurerm_route_table" "apps_prod" {
   name                          = "rt-apps-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-apps-prod-swe", "rg-network-apps-prod-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-apps-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -415,8 +415,8 @@ resource "azurerm_route_table" "apps_nprod" {
   name                          = "rt-apps-nprod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -473,8 +473,8 @@ resource "azurerm_route_table" "shared_prod" {
   name                          = "rt-shared-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-shared-prod-swe", "rg-network-shared-prod-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-shared-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -531,8 +531,8 @@ resource "azurerm_route_table" "shared_nprod" {
   name                          = "rt-shared-nprod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
-  bgp_route_propagation_enabled = true
-  tags                          = var.tags
+  disable_bgp_route_propagation = false
+  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"

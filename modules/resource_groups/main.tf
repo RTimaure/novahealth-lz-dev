@@ -4,28 +4,26 @@ locals {
   project_name = "NovaHealth-LandingZone"
   selected_location = var.deployment_scope == "dr" ? var.dr_location : var.primary_location
 
-    # =========================================================================
-  # 1. SUSCRIPCIÓN: CONNECTIVITY
   # =========================================================================
-  connectivity_rgs = {
-        # Sweden Central (Primary)
-    "rg-network-hub-prod-swe" = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
-    "rg-firewall-prod-swe"    = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-security-team", bu = "Security",        crit = "Critical", cc = "IT-002" }
-    "rg-vpngw-prod-swe"       = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
-    "rg-bastion-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team",      bu = "Security",        crit = "High",     cc = "IT-002" }
-    "rg-dns-prod-swe"         = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
-    "rg-appgw-prod-swe"       = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
-    "rg-mgmt-vm-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team",      bu = "FinOps",          crit = "Medium",   cc = "IT-004" }
+    # 1. SUSCRIPCIÓN: CONNECTIVITY
+    # =========================================================================
+    connectivity_rgs = {
+      # Sweden Central (Primary)
+      "rg-network-hub-prod-swe" = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
+      "rg-firewall-prod-swe"    = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-security-team", bu = "Security",        crit = "Critical", cc = "IT-002" }
+      "rg-vpngw-prod-swe"       = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
+      "rg-bastion-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team",      bu = "Security",        crit = "High",     cc = "IT-002" }
+      "rg-dns-prod-swe"         = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
+      "rg-appgw-prod-swe"       = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
 
-    # West Europe (DR)
-    "rg-network-hub-dr-weu"   = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
-    "rg-firewall-dr-weu"      = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-security-team", bu = "Security",        crit = "Critical", cc = "IT-002" }
-    "rg-vpngw-dr-weu"         = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
-        "rg-bastion-dr-weu"       = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-ops-team",      bu = "Security",        crit = "High",     cc = "IT-002" }
-    "rg-dns-dr-weu"           = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
-    "rg-appgw-dr-weu"         = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
-    "rg-mgmt-vm-dr-weu"       = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-ops-team",      bu = "FinOps",          crit = "Medium",   cc = "IT-004" }
-  }
+      # West Europe (DR)
+      "rg-network-hub-dr-weu"   = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
+      "rg-firewall-dr-weu"      = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-security-team", bu = "Security",        crit = "Critical", cc = "IT-002" }
+      "rg-vpngw-dr-weu"         = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
+      "rg-bastion-dr-weu"       = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-ops-team",      bu = "Security",        crit = "High",     cc = "IT-002" }
+      "rg-dns-dr-weu"           = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "Critical", cc = "IT-001" }
+      "rg-appgw-dr-weu"         = { loc = var.dr_location,      env = "dr",   owner = "grp-novahealth-network-team",  bu = "HospitalSystems", crit = "High",     cc = "IT-001" }
+    }
 
 
   # =========================================================================
@@ -37,18 +35,20 @@ locals {
   }
 
     # =========================================================================
-  # 3. SUSCRIPCIÓN: MANAGEMENT
-  # =========================================================================
-  management_rgs = {
-    "rg-monitoring-prod-swe" = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
-    "rg-automation-prod-swe" = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
-    "rg-backup-prod-swe"     = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Critical",cc = "IT-004" }
-    "rg-sandbox-swe"         = { loc = var.primary_location, env = "sandbox", owner = "grp-novahealth-dev-team", bu = "HospitalSystems", crit = "Low",    cc = "IT-009" }
+    # 3. SUSCRIPCIÓN: MANAGEMENT
+    # =========================================================================
+    management_rgs = {
+      "rg-mgmt-vm-prod-swe"    = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Medium", cc = "IT-004" }
+      "rg-monitoring-prod-swe" = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
+      "rg-automation-prod-swe" = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
+      "rg-backup-prod-swe"     = { loc = var.primary_location, env = "prod",    owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Critical",cc = "IT-004" }
+      "rg-sandbox-swe"         = { loc = var.primary_location, env = "sandbox", owner = "grp-novahealth-dev-team", bu = "HospitalSystems", crit = "Low",    cc = "IT-009" }
     
-    "rg-monitoring-dr-weu"   = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
-    "rg-automation-dr-weu"   = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
-    "rg-backup-dr-weu"       = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Critical",cc = "IT-004" }
-  }
+      "rg-mgmt-vm-dr-weu"      = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Medium", cc = "IT-004" }
+      "rg-monitoring-dr-weu"   = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
+      "rg-automation-dr-weu"   = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "High",   cc = "IT-004" }
+      "rg-backup-dr-weu"       = { loc = var.dr_location,      env = "dr",      owner = "grp-novahealth-ops-team", bu = "FinOps",          crit = "Critical",cc = "IT-004" }
+    }
 
 
     # =========================================================================

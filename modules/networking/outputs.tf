@@ -71,7 +71,9 @@ output "vnet_peerings" {
     { for k, v in azurerm_virtual_network_peering.hub_to_data_prod : k => v.id },
     { for k, v in azurerm_virtual_network_peering.hub_to_data_nprod : k => v.id },
     { for k, v in azurerm_virtual_network_peering.data_to_hub_prod : k => v.id },
-    { for k, v in azurerm_virtual_network_peering.data_to_hub_nprod : k => v.id }
+    { for k, v in azurerm_virtual_network_peering.data_to_hub_nprod : k => v.id },
+    { for k, v in azurerm_virtual_network_peering.hub_to_shared_prod : k => v.id },
+    { for k, v in azurerm_virtual_network_peering.shared_to_hub_prod : k => v.id }
   )
 }
 
@@ -104,6 +106,26 @@ output "private_dns_zones" {
   value       = { for k, v in azurerm_private_dns_zone.dns_zones : k => v.id }
 }
 
+output "firewall_id" {
+  description = "ID del Azure Firewall"
+  value       = azurerm_firewall.fw.id
+}
+
+output "application_gateway_id" {
+  description = "ID del Application Gateway"
+  value       = azurerm_application_gateway.appgw.id
+}
+
+output "vpn_gateway_id" {
+  description = "ID del VPN Gateway"
+  value       = azurerm_virtual_network_gateway.vpngw.id
+}
+
+output "bastion_id" {
+  description = "ID de Azure Bastion"
+  value       = azurerm_bastion_host.bastion.id
+}
+
 output "management_vm_id" {
   description = "ID de la Virtual Machine de Administración (Hopping Host)"
   value       = null
@@ -113,5 +135,6 @@ output "management_vm_private_ip" {
   description = "Dirección IP Privada del Hopping Host en el Hub"
   value       = azurerm_network_interface.mngt_vm_nic.private_ip_address
 }
+
 
 

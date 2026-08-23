@@ -91,19 +91,8 @@ module "networking" {
   location             = var.location
   target_subscriptions = local.target_subscriptions
   resource_group_names = module.resource_groups.rg_names
-
-  tags = merge(
-    var.tags,
-    {
-      environment  = "prod"
-      project      = "NovaHealth-LandingZone"
-      region       = var.location == "swedencentral" ? "SwedenCentral" : "WestEurope"
-      cost-center  = "IT-001"
-      businessUnit = "HospitalSystems"
-      criticality  = "Critical"
-      owner        = "grp-novahealth-network-team"
-    }
-  )
+  resource_group_tags  = module.resource_groups.rg_tags
+  tags                 = var.tags
 
   providers = {
     azurerm.connectivity = azurerm.connectivity
@@ -111,7 +100,6 @@ module "networking" {
     azurerm.management   = azurerm.management
     azurerm.production   = azurerm.production
     azurerm.data_ai      = azurerm.data_ai
-  
   }
 
   depends_on = [module.resource_groups]

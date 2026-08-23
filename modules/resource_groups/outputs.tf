@@ -1,3 +1,4 @@
+
 # Archivo: modules/resource_groups/outputs.tf
 
 output "rg_ids" {
@@ -19,5 +20,16 @@ output "rg_names" {
     { for k, v in azurerm_resource_group.management : k => v.name },
     { for k, v in azurerm_resource_group.production : k => v.name },
     { for k, v in azurerm_resource_group.data_ai : k => v.name }
+  )
+}
+
+output "rg_tags" {
+  description = "Mapa global de Tags de todos los Resource Groups desplegados"
+  value = merge(
+    { for k, v in azurerm_resource_group.connectivity : k => v.tags },
+    { for k, v in azurerm_resource_group.identity : k => v.tags },
+    { for k, v in azurerm_resource_group.management : k => v.tags },
+    { for k, v in azurerm_resource_group.production : k => v.tags },
+    { for k, v in azurerm_resource_group.data_ai : k => v.tags }
   )
 }

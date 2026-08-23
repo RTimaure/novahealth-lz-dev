@@ -3,6 +3,12 @@
 locals {
   fw_private_ip = "10.0.2.4"
 
+  # Helper para obtener tags dinámicamente según el Resource Group asignado
+  # Si el RG tiene tags definidos en var.resource_group_tags, los utiliza; si no, combina var.tags
+  get_tags = {
+    for k, v in var.resource_group_names : k => lookup(var.resource_group_tags, k, var.tags)
+  }
+
   vnets = {
     hub_prod = {
       name          = "vnet-hub-prod-swe"
@@ -186,7 +192,7 @@ resource "azurerm_virtual_network" "hub_prod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "hub_prod" {
@@ -215,14 +221,14 @@ resource "azurerm_network_security_group" "hub_nsgs_prod" {
   name                = each.value.subnet_name == "AzureBastionSubnet" ? "nsg-bastion-prod-swe-001" : replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "hub_prod" {
   provider                  = azurerm.connectivity
-  for_each                  = azurerm_network_security_group.hub_nsgs_prod
+  for_each                  = { for k, v in local.hub_subnets_prod : k => v if !contains(["AzureFirewallSubnet", "GatewaySubnet"], v.subnet_name) }
   subnet_id                 = azurerm_subnet.hub_prod[each.key].id
-  network_security_group_id = each.value.id
+  network_security_group_id = azurerm_network_security_group.hub_nsgs_prod[each.key].id
 
   depends_on = [
     azurerm_network_security_rule.hub_rules_prod
@@ -239,7 +245,7 @@ resource "azurerm_virtual_network" "hub_nprod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "hub_nprod" {
@@ -268,15 +274,14 @@ resource "azurerm_network_security_group" "hub_nsgs_nprod" {
   name                = each.value.subnet_name == "AzureBastionSubnet" ? "nsg-bastion-nprod-swe-001" : replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "hub_nprod" {
   provider                  = azurerm.production
-  for_each                  = azurerm_network_security_group.hub_nsgs_nprod
+  for_each                  = { for k, v in local.hub_subnets_nprod : k => v if !contains(["AzureFirewallSubnet", "GatewaySubnet"], v.subnet_name) }
   subnet_id                 = azurerm_subnet.hub_nprod[each.key].id
-  network_security_group_id = each.value.id
-
+  network_security_group_id = azurerm_network_security_group.hub_nsgs_nprod[each.key].id
   depends_on = [
     azurerm_network_security_rule.hub_rules_nprod
   ]
@@ -292,7 +297,7 @@ resource "azurerm_virtual_network" "data_prod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "data_prod" {
@@ -310,14 +315,14 @@ resource "azurerm_network_security_group" "data_nsgs_prod" {
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "data_prod" {
   provider                  = azurerm.data_ai
-  for_each                  = azurerm_network_security_group.data_nsgs_prod
+  for_each                  = local.data_subnets_prod
   subnet_id                 = azurerm_subnet.data_prod[each.key].id
-  network_security_group_id = each.value.id
+  network_security_group_id = azurerm_network_security_group.data_nsgs_prod[each.key].id
 
   depends_on = [
     azurerm_network_security_rule.data_ai_rules_prod
@@ -334,7 +339,7 @@ resource "azurerm_virtual_network" "data_nprod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "data_nprod" {
@@ -352,14 +357,14 @@ resource "azurerm_network_security_group" "data_nsgs_nprod" {
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "data_nprod" {
   provider                  = azurerm.production
-  for_each                  = azurerm_network_security_group.data_nsgs_nprod
+  for_each                  = local.data_subnets_nprod
   subnet_id                 = azurerm_subnet.data_nprod[each.key].id
-  network_security_group_id = each.value.id
+  network_security_group_id = azurerm_network_security_group.data_nsgs_nprod[each.key].id
 
   depends_on = [
     azurerm_network_security_rule.data_ai_rules_nprod
@@ -376,7 +381,7 @@ resource "azurerm_virtual_network" "shared_prod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "shared_prod" {
@@ -394,14 +399,14 @@ resource "azurerm_network_security_group" "shared_nsgs_prod" {
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "shared_prod" {
   provider                  = azurerm.data_ai
-  for_each                  = azurerm_network_security_group.shared_nsgs_prod
+  for_each                  = local.shared_subnets_prod
   subnet_id                 = azurerm_subnet.shared_prod[each.key].id
-  network_security_group_id = each.value.id
+  network_security_group_id = azurerm_network_security_group.shared_nsgs_prod[each.key].id
 
   depends_on = [
     azurerm_network_security_rule.prod_rules
@@ -418,7 +423,7 @@ resource "azurerm_virtual_network" "prod" {
   location            = var.location
   resource_group_name = each.value.rg_name
   address_space       = each.value.address_space
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet" "prod" {
@@ -436,14 +441,14 @@ resource "azurerm_network_security_group" "prod_nsgs" {
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
   resource_group_name = each.value.rg_name
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, each.value.rg_name, var.tags)
 }
 
 resource "azurerm_subnet_network_security_group_association" "prod" {
   provider                  = azurerm.production
-  for_each                  = azurerm_network_security_group.prod_nsgs
+  for_each                  = local.prod_subnets
   subnet_id                 = azurerm_subnet.prod[each.key].id
-  network_security_group_id = each.value.id
+  network_security_group_id = azurerm_network_security_group.prod_nsgs[each.key].id
 
   depends_on = [
     azurerm_network_security_rule.prod_rules
@@ -454,90 +459,136 @@ resource "azurerm_subnet_network_security_group_association" "prod" {
 # GLOBAL VNET PEERINGS
 # =========================================================================
 
-# --- HUB <-> PROD (aks/apps/shared) ---
+# --- HUB <-> PROD (aks/apps/shared_nprod) ---
+# Según CSV:
+# Hub -> Spoke: allow_virtual_network_access=true, allow_forwarded_traffic=true, allow_gateway_transit=true, use_remote_gateways=false
+# Spoke -> Hub: allow_virtual_network_access=true, allow_forwarded_traffic=true, allow_gateway_transit=false, use_remote_gateways=true
 resource "azurerm_virtual_network_peering" "hub_to_prod_prod" {
   provider                     = azurerm.connectivity
   for_each                     = local.prod_vnets_envprod
-  name                         = "peer-hub-to-${each.key}-swe-01"
+  name                         = "peer-hub-${replace(each.key, "_prod", "")}-prod-swe-01"
   resource_group_name          = local.vnets["hub_prod"].rg_name
   virtual_network_name         = azurerm_virtual_network.hub_prod["hub_prod"].name
   remote_virtual_network_id    = azurerm_virtual_network.prod[each.key].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
-  depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.prod]
+  allow_gateway_transit        = true
+  use_remote_gateways          = false
+  depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.prod, azurerm_virtual_network_gateway.vpngw]
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_prod_nprod" {
   provider                     = azurerm.production
   for_each                     = local.prod_vnets_envnprod
-  name                         = "peer-hub-to-${each.key}-swe-01"
+  name                         = "peer-hub-${replace(each.key, "_nprod", "")}-dev-swe-01"
   resource_group_name          = local.vnets["hub_nprod"].rg_name
   virtual_network_name         = azurerm_virtual_network.hub_nprod["hub_nprod"].name
   remote_virtual_network_id    = azurerm_virtual_network.prod[each.key].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = true
+  use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.hub_nprod, azurerm_subnet.prod]
 }
 
 resource "azurerm_virtual_network_peering" "prod_to_hub" {
   provider                     = azurerm.production
   for_each                     = local.prod_vnets
-  name                         = "peer-${each.key}-to-hub-swe-01"
+  name                         = length(regexall("nprod", each.key)) > 0 ? "peer-${replace(each.key, "_nprod", "")}-hub-dev-swe-01" : "peer-${replace(each.key, "_prod", "")}-hub-prod-swe-01"
   resource_group_name          = each.value.rg_name
   virtual_network_name         = azurerm_virtual_network.prod[each.key].name
   remote_virtual_network_id    = length(regexall("nprod", each.key)) > 0 ? azurerm_virtual_network.hub_nprod["hub_nprod"].id : azurerm_virtual_network.hub_prod["hub_prod"].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
-  depends_on                   = [azurerm_subnet.prod, azurerm_subnet.hub_prod, azurerm_subnet.hub_nprod, azurerm_firewall.fw]
+  allow_gateway_transit        = false
+  use_remote_gateways          = length(regexall("nprod", each.key)) > 0 ? false : true
+  depends_on                   = [azurerm_subnet.prod, azurerm_subnet.hub_prod, azurerm_subnet.hub_nprod, azurerm_firewall.fw, azurerm_virtual_network_gateway.vpngw]
 }
 
 # --- HUB <-> DATA & IA ---
 resource "azurerm_virtual_network_peering" "hub_to_data_prod" {
   provider                     = azurerm.connectivity
   for_each                     = local.data_vnets_prod
-  name                         = "peer-hub-to-${each.key}-swe-01"
+  name                         = "peer-hub-dataia-prod-swe-01"
   resource_group_name          = local.vnets["hub_prod"].rg_name
   virtual_network_name         = azurerm_virtual_network.hub_prod["hub_prod"].name
   remote_virtual_network_id    = azurerm_virtual_network.data_prod[each.key].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
-  depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.data_prod]
+  allow_gateway_transit        = true
+  use_remote_gateways          = false
+  depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.data_prod, azurerm_virtual_network_gateway.vpngw]
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_data_nprod" {
   provider                     = azurerm.production
   for_each                     = local.data_vnets_nprod
-  name                         = "peer-hub-to-${each.key}-swe-01"
+  name                         = "peer-hub-dataia-dev-swe-01"
   resource_group_name          = local.vnets["hub_nprod"].rg_name
   virtual_network_name         = azurerm_virtual_network.hub_nprod["hub_nprod"].name
   remote_virtual_network_id    = azurerm_virtual_network.data_nprod[each.key].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = true
+  use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.hub_nprod, azurerm_subnet.data_nprod]
 }
 
 resource "azurerm_virtual_network_peering" "data_to_hub_prod" {
   provider                     = azurerm.data_ai
   for_each                     = local.data_vnets_prod
-  name                         = "peer-${each.key}-to-hub-swe-01"
+  name                         = "peer-dataia-hub-prod-swe-01"
   resource_group_name          = each.value.rg_name
   virtual_network_name         = azurerm_virtual_network.data_prod[each.key].name
   remote_virtual_network_id    = azurerm_virtual_network.hub_prod["hub_prod"].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
-  depends_on                   = [azurerm_subnet.data_prod, azurerm_subnet.hub_prod]
+  allow_gateway_transit        = false
+  use_remote_gateways          = true
+  depends_on                   = [azurerm_subnet.data_prod, azurerm_subnet.hub_prod, azurerm_virtual_network_gateway.vpngw]
 }
 
 resource "azurerm_virtual_network_peering" "data_to_hub_nprod" {
   provider                     = azurerm.production
   for_each                     = local.data_vnets_nprod
-  name                         = "peer-${each.key}-to-hub-swe-01"
+  name                         = "peer-dataia-hub-dev-swe-01"
   resource_group_name          = each.value.rg_name
   virtual_network_name         = azurerm_virtual_network.data_nprod[each.key].name
   remote_virtual_network_id    = azurerm_virtual_network.hub_nprod["hub_nprod"].id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.data_nprod, azurerm_subnet.hub_nprod]
+}
+
+# --- HUB <-> SHARED SERVICES PROD (PLATFORM SERVICES) ---
+resource "azurerm_virtual_network_peering" "hub_to_shared_prod" {
+  provider                     = azurerm.connectivity
+  for_each                     = local.shared_vnets_prod
+  name                         = "peer-hub-shared-prod-swe-01"
+  resource_group_name          = local.vnets["hub_prod"].rg_name
+  virtual_network_name         = azurerm_virtual_network.hub_prod["hub_prod"].name
+  remote_virtual_network_id    = azurerm_virtual_network.shared_prod[each.key].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = true
+  use_remote_gateways          = false
+  depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.shared_prod, azurerm_virtual_network_gateway.vpngw]
+}
+
+resource "azurerm_virtual_network_peering" "shared_to_hub_prod" {
+  provider                     = azurerm.data_ai
+  for_each                     = local.shared_vnets_prod
+  name                         = "peer-shared-hub-prod-swe-01"
+  resource_group_name          = each.value.rg_name
+  virtual_network_name         = azurerm_virtual_network.shared_prod[each.key].name
+  remote_virtual_network_id    = azurerm_virtual_network.hub_prod["hub_prod"].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = true
+  depends_on                   = [azurerm_subnet.shared_prod, azurerm_subnet.hub_prod, azurerm_virtual_network_gateway.vpngw]
 }
 
 # --- GLOBAL VNET PEERING INTER-REGIÓN (SWEDEN CENTRAL <-> WEST EUROPE) ---
@@ -553,7 +604,7 @@ resource "azurerm_virtual_network_peering" "global_hub_to_remote_hub" {
   allow_gateway_transit        = true
   use_remote_gateways          = false
 
-  depends_on = [azurerm_subnet.hub_prod]
+  depends_on = [azurerm_subnet.hub_prod, azurerm_virtual_network_gateway.vpngw]
 }
 
 
@@ -567,7 +618,7 @@ resource "azurerm_public_ip" "firewall_pip" {
   resource_group_name = lookup(var.resource_group_names, "rg-firewall-prod-swe", "rg-firewall-prod-swe")
   allocation_method   = "Static"
   sku                 = "Standard"
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-firewall-prod-swe", var.tags)
 }
 
 resource "azurerm_firewall_policy" "fw_policy" {
@@ -575,7 +626,7 @@ resource "azurerm_firewall_policy" "fw_policy" {
   name                = "afwp-prod-swe"
   resource_group_name = lookup(var.resource_group_names, "rg-firewall-prod-swe", "rg-firewall-prod-swe")
   location            = var.location
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-firewall-prod-swe", var.tags)
 }
 
 resource "azurerm_firewall" "fw" {
@@ -586,7 +637,7 @@ resource "azurerm_firewall" "fw" {
   sku_name            = "AZFW_VNet"
   sku_tier            = "Standard"
   firewall_policy_id  = azurerm_firewall_policy.fw_policy.id
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-network-hub-prod-swe", var.tags)
 
   ip_configuration {
     name                 = "configuration"
@@ -602,7 +653,7 @@ resource "azurerm_public_ip" "bastion_pip" {
   resource_group_name = lookup(var.resource_group_names, "rg-bastion-prod-swe", "rg-bastion-prod-swe")
   allocation_method   = "Static"
   sku                 = "Standard"
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-bastion-prod-swe", var.tags)
 }
 
 resource "azurerm_bastion_host" "bastion" {
@@ -611,7 +662,7 @@ resource "azurerm_bastion_host" "bastion" {
   location            = var.location
   resource_group_name = lookup(var.resource_group_names, "rg-bastion-prod-swe", "rg-bastion-prod-swe")
   sku                 = "Standard"
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-bastion-prod-swe", var.tags)
 
   ip_configuration {
     name                 = "configuration"
@@ -631,7 +682,7 @@ resource "azurerm_public_ip" "vpngw_pip" {
   allocation_method   = "Static"
   sku                 = "Standard"
   zones               = ["1", "2", "3"]
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-vpngw-prod-swe", var.tags)
 }
 
 resource "azurerm_virtual_network_gateway" "vpngw" {
@@ -655,7 +706,7 @@ resource "azurerm_virtual_network_gateway" "vpngw" {
     subnet_id                     = azurerm_subnet.hub_prod["hub_prod_GatewaySubnet"].id
   }
 
-  tags = var.tags
+  tags = lookup(var.resource_group_tags, "rg-network-hub-prod-swe", var.tags)
 }
 
 # =========================================================================
@@ -668,7 +719,7 @@ resource "azurerm_public_ip" "appgw_pip" {
   resource_group_name = lookup(var.resource_group_names, "rg-appgw-prod-swe", "rg-appgw-prod-swe")
   allocation_method   = "Static"
   sku                 = "Standard"
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-appgw-prod-swe", var.tags)
 }
 
 resource "azurerm_web_application_firewall_policy" "waf" {
@@ -676,7 +727,7 @@ resource "azurerm_web_application_firewall_policy" "waf" {
   name                = "waf-agw-prod-swe"
   resource_group_name = lookup(var.resource_group_names, "rg-appgw-prod-swe", "rg-appgw-prod-swe")
   location            = var.location
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-appgw-prod-swe", var.tags)
 
   policy_settings {
     enabled                     = true
@@ -699,7 +750,7 @@ resource "azurerm_application_gateway" "appgw" {
   name                = "agw-hub-prod-swe"
   resource_group_name = lookup(var.resource_group_names, "rg-appgw-prod-swe", "rg-appgw-prod-swe")
   location            = var.location
-  tags                = var.tags
+  tags                = lookup(var.resource_group_tags, "rg-appgw-prod-swe", var.tags)
   firewall_policy_id  = azurerm_web_application_firewall_policy.waf.id
 
   sku {
