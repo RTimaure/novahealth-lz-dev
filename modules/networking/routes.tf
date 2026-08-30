@@ -2,7 +2,7 @@
 
 # =========================================================================
 # TABLAS DE ENRUTAMIENTO (UDR) Y RUTAS DE RED
-# Convención Naming C1: [rt]-[propósito]-[entorno]-[región] (4 segmentos)
+# Convención Naming C1: rt-<scope>-<env>-<region> (4 segmentos)
 # =========================================================================
 
 # -------------------------------------------------------------------------
@@ -12,9 +12,9 @@ resource "azurerm_route_table" "hub_mngt_prod" {
   provider                      = azurerm.connectivity
   name                          = "rt-mngt-prod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-hub-prod-swe", "rg-network-hub-prod-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-nethub-prod-swe", "rg-nethub-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-hub-prod-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-nethub-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -54,20 +54,20 @@ resource "azurerm_route_table" "hub_mngt_prod" {
 
 resource "azurerm_subnet_route_table_association" "hub_mngt_prod" {
   provider       = azurerm.connectivity
-  subnet_id      = azurerm_subnet.hub_prod["hub_prod_snet-mngt-prod-swe-001"].id
+  subnet_id      = azurerm_subnet.hub_prod["hub_prod_snet-hub-mngt-prod-swe"].id
   route_table_id = azurerm_route_table.hub_mngt_prod.id
 }
 
 # -------------------------------------------------------------------------
-# 2. HUB MANAGEMENT - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-network-dev-swe)
+# 2. HUB MANAGEMENT - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "hub_mngt_nprod" {
   provider                      = azurerm.production
   name                          = "rt-mngt-nprod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -107,7 +107,7 @@ resource "azurerm_route_table" "hub_mngt_nprod" {
 
 resource "azurerm_subnet_route_table_association" "hub_mngt_nprod" {
   provider       = azurerm.production
-  subnet_id      = azurerm_subnet.hub_nprod["hub_nprod_snet-mngt-nprod-swe-001"].id
+  subnet_id      = azurerm_subnet.hub_nprod["hub_nprod_snet-hub-mngt-nprod-swe"].id
   route_table_id = azurerm_route_table.hub_mngt_nprod.id
 }
 
@@ -118,9 +118,9 @@ resource "azurerm_route_table" "aks_prod" {
   provider                      = azurerm.production
   name                          = "rt-aks-prod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-aks-prod-swe", "rg-network-aks-prod-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netaks-prod-swe", "rg-netaks-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-aks-prod-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netaks-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -161,10 +161,10 @@ resource "azurerm_route_table" "aks_prod" {
 resource "azurerm_subnet_route_table_association" "aks_prod" {
   provider = azurerm.production
   for_each = toset([
-    "aks_prod_snet-aksworkload-prod-swe-001",
-    "aks_prod_snet-akssystem-prod-swe-001",
-    "aks_prod_snet-aksingress-prod-swe-001",
-    "aks_prod_snet-aksmonitoring-prod-swe-001"
+    "aks_prod_snet-aks-workload-prod-swe",
+    "aks_prod_snet-aks-system-prod-swe",
+    "aks_prod_snet-aks-ingress-prod-swe",
+    "aks_prod_snet-aks-monitoring-prod-swe"
   ])
 
   subnet_id      = azurerm_subnet.prod[each.key].id
@@ -172,15 +172,15 @@ resource "azurerm_subnet_route_table_association" "aks_prod" {
 }
 
 # -------------------------------------------------------------------------
-# 4. AKS SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-network-dev-swe)
+# 4. AKS SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "aks_nprod" {
   provider                      = azurerm.production
   name                          = "rt-aks-nprod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -221,10 +221,10 @@ resource "azurerm_route_table" "aks_nprod" {
 resource "azurerm_subnet_route_table_association" "aks_nprod" {
   provider = azurerm.production
   for_each = toset([
-    "aks_nprod_snet-aksworkload-nprod-swe-001",
-    "aks_nprod_snet-akssystem-nprod-swe-001",
-    "aks_nprod_snet-aksingress-nprod-swe-001",
-    "aks_nprod_snet-aksmonitoring-nprod-swe-001"
+    "aks_nprod_snet-aks-workload-nprod-swe",
+    "aks_nprod_snet-aks-system-nprod-swe",
+    "aks_nprod_snet-aks-ingress-nprod-swe",
+    "aks_nprod_snet-aks-monitoring-nprod-swe"
   ])
 
   subnet_id      = azurerm_subnet.prod[each.key].id
@@ -238,9 +238,9 @@ resource "azurerm_route_table" "data_prod" {
   provider                      = azurerm.data_ai
   name                          = "rt-dataai-prod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dataai-prod-swe", "rg-network-dataai-prod-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdataai-prod-swe", "rg-netdataai-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dataai-prod-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdataai-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -281,9 +281,9 @@ resource "azurerm_route_table" "data_prod" {
 resource "azurerm_subnet_route_table_association" "data_prod" {
   provider = azurerm.data_ai
   for_each = toset([
-    "dataai_prod_snet-dataaianalytics-prod-swe-001",
-    "dataai_prod_snet-dataaicompute-prod-swe-001",
-    "dataai_prod_snet-dataaistreaming-prod-swe-001"
+    "dataai_prod_snet-dataai-analytics-prod-swe",
+    "dataai_prod_snet-dataai-compute-prod-swe",
+    "dataai_prod_snet-dataai-streaming-prod-swe"
   ])
 
   subnet_id      = azurerm_subnet.data_prod[each.key].id
@@ -291,15 +291,15 @@ resource "azurerm_subnet_route_table_association" "data_prod" {
 }
 
 # -------------------------------------------------------------------------
-# 6. DATA & IA SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-network-dev-swe)
+# 6. DATA & IA SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "data_nprod" {
   provider                      = azurerm.production
   name                          = "rt-dataai-nprod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -340,9 +340,9 @@ resource "azurerm_route_table" "data_nprod" {
 resource "azurerm_subnet_route_table_association" "data_nprod" {
   provider = azurerm.production
   for_each = toset([
-    "dataai_nprod_snet-dataaianalytics-nprod-swe-001",
-    "dataai_nprod_snet-dataaicompute-nprod-swe-001",
-    "dataai_nprod_snet-dataaistreaming-nprod-swe-001"
+    "dataai_nprod_snet-dataai-analytics-nprod-swe",
+    "dataai_nprod_snet-dataai-compute-nprod-swe",
+    "dataai_nprod_snet-dataai-streaming-nprod-swe"
   ])
 
   subnet_id      = azurerm_subnet.data_nprod[each.key].id
@@ -356,9 +356,9 @@ resource "azurerm_route_table" "apps_prod" {
   provider                      = azurerm.production
   name                          = "rt-apps-prod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-apps-prod-swe", "rg-network-apps-prod-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netapps-prod-swe", "rg-netapps-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-apps-prod-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netapps-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -399,8 +399,8 @@ resource "azurerm_route_table" "apps_prod" {
 resource "azurerm_subnet_route_table_association" "apps_prod" {
   provider = azurerm.production
   for_each = toset([
-    "apps_prod_snet-appsaca-prod-swe-001",
-    "apps_prod_snet-appsmessaging-prod-swe-001"
+    "apps_prod_snet-apps-aca-prod-swe",
+    "apps_prod_snet-apps-messaging-prod-swe"
   ])
 
   subnet_id      = azurerm_subnet.prod[each.key].id
@@ -408,15 +408,15 @@ resource "azurerm_subnet_route_table_association" "apps_prod" {
 }
 
 # -------------------------------------------------------------------------
-# 8. APPS SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-network-dev-swe)
+# 8. APPS SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "apps_nprod" {
   provider                      = azurerm.production
   name                          = "rt-apps-nprod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -457,8 +457,8 @@ resource "azurerm_route_table" "apps_nprod" {
 resource "azurerm_subnet_route_table_association" "apps_nprod" {
   provider = azurerm.production
   for_each = toset([
-    "apps_nprod_snet-appsaca-nprod-swe-001",
-    "apps_nprod_snet-appsmessaging-nprod-swe-001"
+    "apps_nprod_snet-apps-aca-nprod-swe",
+    "apps_nprod_snet-apps-messaging-nprod-swe"
   ])
 
   subnet_id      = azurerm_subnet.prod[each.key].id
@@ -466,15 +466,15 @@ resource "azurerm_subnet_route_table_association" "apps_nprod" {
 }
 
 # -------------------------------------------------------------------------
-# 9. SHARED SERVICES SPOKE - PROD (SUSCRIPCIÓN: PRODUCTION)
+# 9. SHARED SERVICES SPOKE - PROD (SUSCRIPCIÓN: DATA_AI)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "shared_prod" {
   provider                      = azurerm.data_ai
   name                          = "rt-shared-prod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-shared-prod-swe", "rg-network-shared-prod-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netshared-prod-swe", "rg-netshared-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-shared-prod-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netshared-prod-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -515,8 +515,8 @@ resource "azurerm_route_table" "shared_prod" {
 resource "azurerm_subnet_route_table_association" "shared_prod" {
   provider = azurerm.data_ai
   for_each = toset([
-    "shared_prod_snet-sharedapim-prod-swe-001",
-    "shared_prod_snet-shareddevops-prod-swe-001"
+    "shared_prod_snet-shared-apim-prod-swe",
+    "shared_prod_snet-shared-devops-prod-swe"
   ])
 
   subnet_id      = azurerm_subnet.shared_prod[each.key].id
@@ -524,15 +524,15 @@ resource "azurerm_subnet_route_table_association" "shared_prod" {
 }
 
 # -------------------------------------------------------------------------
-# 10. SHARED SERVICES SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-network-dev-swe)
+# 10. SHARED SERVICES SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "shared_nprod" {
   provider                      = azurerm.production
   name                          = "rt-shared-nprod-swe"
   location                      = var.location
-  resource_group_name           = lookup(var.resource_group_names, "rg-network-dev-swe", "rg-network-dev-swe")
+  resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-network-dev-swe", var.tags)
+  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
 
   route {
     name                   = "to-internet"
@@ -573,8 +573,8 @@ resource "azurerm_route_table" "shared_nprod" {
 resource "azurerm_subnet_route_table_association" "shared_nprod" {
   provider = azurerm.production
   for_each = toset([
-    "shared_nprod_snet-sharedapim-nprod-swe-001",
-    "shared_nprod_snet-shareddevops-nprod-swe-001"
+    "shared_nprod_snet-shared-apim-nprod-swe",
+    "shared_nprod_snet-shared-devops-nprod-swe"
   ])
 
   subnet_id      = azurerm_subnet.prod[each.key].id

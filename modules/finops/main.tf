@@ -10,59 +10,68 @@ terraform {
 }
 
 locals {
-  # Tabla completa de presupuestos operacionales extraída de finops.csv (montos en EUR/mes)
+  # Tabla de presupuestos operacionales alineada con los Centros de Coste oficiales CC-001 a CC-009
   subscription_budgets = {
-    identity = {
-      display_name = "Budget-Identity-Sub"
-      amount       = 300
-      cost_center  = "IT-001"
-    }
-    management = {
-      display_name = "Budget-Management-Sub"
-      amount       = 400
-      cost_center  = "IT-002"
-    }
     connectivity = {
       display_name = "Budget-Connectivity-Sub"
       amount       = 500
-      cost_center  = "IT-003"
+      cost_center  = "CC-001"
+    }
+    identity = {
+      display_name = "Budget-Identity-Sub"
+      amount       = 300
+      cost_center  = "CC-002"
     }
     security = {
       display_name = "Budget-Security-Sub"
       amount       = 350
-      cost_center  = "IT-009"
+      cost_center  = "CC-003"
+    }
+    management = {
+      display_name = "Budget-Management-Sub"
+      amount       = 400
+      cost_center  = "CC-004"
     }
     production = {
       display_name = "Budget-Prod-Sub"
       amount       = 850
-      cost_center  = "IT-004"
+      cost_center  = "CC-005"
+    }
+    telemedicine = {
+      display_name = "Budget-Telemedicine-Sub"
+      amount       = 300
+      cost_center  = "CC-006"
     }
     data_ai = {
       display_name = "Budget-Data-IA-Sub"
       amount       = 435
-      cost_center  = "IT-008"
+      cost_center  = "CC-007"
+    }
+    shared_services = {
+      display_name = "Budget-SharedServices-Sub"
+      amount       = 250
+      cost_center  = "CC-008"
     }
     development = {
       display_name = "Budget-Dev-Sub"
       amount       = 400
-      cost_center  = "IT-005"
+      cost_center  = "CC-005"
     }
     qa = {
       display_name = "Budget-QA-Sub"
       amount       = 200
-      cost_center  = "IT-006"
+      cost_center  = "CC-005"
     }
     sandbox = {
       display_name = "Budget-Sandbox-Sub"
       amount       = 100
-      cost_center  = "IT-007"
+      cost_center  = "CC-009"
     }
-    # NUEVO: Control financiero del licenciamiento Entra ID P2 (PIM) según línea del CSV (120 €/mes)
-    # Imputado al ámbito de Platform/Identity para auditar los ~8 €/usuario x 15 usuarios privilegiados
+    # Control financiero del licenciamiento Entra ID P2 (PIM)
     entra_id_p2_pim = {
       display_name = "Budget-EntraID-P2-PIM"
       amount       = 120
-      cost_center  = "IT-001"
+      cost_center  = "CC-002"
     }
   }
 

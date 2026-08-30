@@ -141,20 +141,29 @@ resource "azurerm_policy_definition" "enforce_naming" {
 }
 
 # ==============================================================================
-# 2. POLÍTICA DE ETIQUETAS OBLIGATORIAS (7 TAGS CORPORATIVOS)
+# 2. POLÍTICA DE ETIQUETAS OBLIGATORIAS (8 TAGS CORPORATIVOS OFICIALES)
+# ==============================================================================
+# 1. environmentType: primary | dr
+# 2. environment: prod | qa | dev | sandbox
+# 3. region: SwedenCentral | WestEurope
+# 4. owner: grp-novahealth-*
+# 5. costCenter: CC-001 a CC-009
+# 6. project: NovaHealth-LandingZone
+# 7. workload: platformshared-services | hospital-systems | telemedicine | medical-imaging | clinical-ai | security-compliance
+# 8. criticality: Critical | High | Medium | Low
 # ==============================================================================
 resource "azurerm_policy_definition" "require_mandatory_tags" {
   name                = "nh-require-mandatory-tags"
   policy_type         = "Custom"
-  mode                = "All"
-  display_name        = "Require Mandatory Tags (NovaHealth 7 Fields)"
-  description         = "Exige la presencia de las 7 etiquetas corporativas (environment, owner, cost-center, project, businessUnit, criticality, region) tanto en Resource Groups como en recursos, y valida que el owner comience con grp-novahealth-*."
+  mode                = "Indexed"
+  display_name        = "Require Mandatory Tags (NovaHealth 8 Fields)"
+  description         = "Exige la presencia de las 8 etiquetas corporativas (environmentType, environment, region, owner, costCenter, project, workload, criticality) tanto en Resource Groups como en recursos, y valida que el owner comience con grp-novahealth-*."
   management_group_id = var.root_mg_id
 
   metadata = <<METADATA
     {
       "category": "Tagging and Naming",
-      "version": "2.0.0"
+      "version": "4.0.0"
     }
   METADATA
 
@@ -162,7 +171,9 @@ resource "azurerm_policy_definition" "require_mandatory_tags" {
   {
     "if": {
       "anyOf": [
+        { "field": "tags['environmentType']", "exists": "false" },
         { "field": "tags['environment']", "exists": "false" },
+        { "field": "tags['region']", "exists": "false" },
         { "field": "tags['owner']", "exists": "false" },
         {
           "allOf": [
@@ -170,11 +181,10 @@ resource "azurerm_policy_definition" "require_mandatory_tags" {
             { "field": "tags['owner']", "notLike": "grp-novahealth-*" }
           ]
         },
-        { "field": "tags['cost-center']", "exists": "false" },
+        { "field": "tags['costCenter']", "exists": "false" },
         { "field": "tags['project']", "exists": "false" },
-        { "field": "tags['businessUnit']", "exists": "false" },
-        { "field": "tags['criticality']", "exists": "false" },
-        { "field": "tags['region']", "exists": "false" }
+        { "field": "tags['workload']", "exists": "false" },
+        { "field": "tags['criticality']", "exists": "false" }
       ]
     },
     "then": {

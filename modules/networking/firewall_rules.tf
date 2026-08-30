@@ -15,13 +15,6 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
 
   # -----------------------------------------------------------------------
   # 0. REGLAS EXPLÍCITAS DE DENEGACIÓN (DEFAULT DENY / ZERO TRUST SEGÚN CSV)
-  # Comunicaciones explícitamente denegadas en la matriz:
-  # - Internet -> AKS Clúster Privado
-  # - Internet -> PaaS (Azure SQL, Cosmos DB, AI Search, OpenAI, Blob Storage)
-  # - Spoke Apps -> Spoke AKS directo
-  # - Spoke Apps -> Spoke Data-IA directo
-  # - Spoke AKS -> Spoke Shared Services directo
-  # - Administración RDP/SSH directa desde Internet
   # -----------------------------------------------------------------------
   network_rule_collection {
     name     = "rc-explicit-deny-rules"
@@ -63,8 +56,8 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
 
   # -----------------------------------------------------------------------
   # F1: Publicación segura desde Application Gateway (WAF) hacia AKS Ingress y Apps
-  # Origen: snet-appgw-prod-swe-001 (10.0.2.64/26)
-  # Destino: snet-aksingress-prod-swe-001 (10.0.7.0/26) y snet-appsaca-prod-swe-001 (10.0.10.0/25)
+  # Origen: snet-hub-appgw-prod-swe (10.0.2.64/26)
+  # Destino: snet-aks-ingress-prod-swe (10.0.7.0/26) y snet-apps-aca-prod-swe (10.0.10.0/25)
   # -----------------------------------------------------------------------
   network_rule_collection {
     name     = "rc-inbound-appgw-to-spokes"
@@ -90,7 +83,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
 
   # -----------------------------------------------------------------------
   # F2: Administración Segura (Hopping Host hacia AKS Private API y PEs)
-  # Origen: snet-mngt-prod-swe-001 (10.0.0.0/24)
+  # Origen: snet-hub-mngt-prod-swe (10.0.0.0/24)
   # Destino: AKS Private API (10.0.7.64/26), Shared PE (10.0.11.0/25), Hub PE (10.0.1.0/24)
   # -----------------------------------------------------------------------
   network_rule_collection {
@@ -151,7 +144,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
   # -----------------------------------------------------------------------
   # F4: Resolución DNS Privada (Management y Spokes hacia Inbound Endpoint de DNS Resolver)
   # Origen: Management Subnet (10.0.0.0/24) y Spokes
-  # Destino: snet-dnsin-prod-swe-001 (10.0.3.0/27)
+  # Destino: snet-hub-dnsin-prod-swe (10.0.3.0/27)
   # -----------------------------------------------------------------------
   network_rule_collection {
     name     = "rc-dns-resolution"
@@ -186,7 +179,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-SharedPE-HTTPS"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"] # Workloads & System
-      destination_addresses = ["10.0.11.0/25"]                # snet-sharedpe-prod-swe-001
+      destination_addresses = ["10.0.11.0/25"]                # snet-shared-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -195,7 +188,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-AppsPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"]
-      destination_addresses = ["10.0.10.192/26"]              # snet-appspe-prod-swe-001
+      destination_addresses = ["10.0.10.192/26"]              # snet-apps-pe-prod-swe
       destination_ports     = ["443", "1433", "5671"]
     }
 
@@ -204,7 +197,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-DataAIPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"]
-      destination_addresses = ["10.0.8.0/25"]                 # snet-dataaipe-prod-swe-001
+      destination_addresses = ["10.0.8.0/25"]                 # snet-dataai-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -213,7 +206,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-Apps-to-SharedPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.10.0/25", "10.0.10.128/26"] # ACA & Messaging
-      destination_addresses = ["10.0.11.0/25"]                    # snet-sharedpe-prod-swe-001
+      destination_addresses = ["10.0.11.0/25"]                    # snet-shared-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -222,7 +215,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-Apps-to-AppsPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.10.0/25", "10.0.10.128/26"]
-      destination_addresses = ["10.0.10.192/26"]                  # snet-appspe-prod-swe-001
+      destination_addresses = ["10.0.10.192/26"]                  # snet-apps-pe-prod-swe
       destination_ports     = ["443", "1433", "5671"]
     }
 
@@ -231,11 +224,11 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-DataIA-to-DataAIPE"
       protocols             = ["TCP"]
       source_addresses      = [
-        "10.0.8.128/25", # snet-dataaianalytics-prod-swe-001
-        "10.0.9.0/25",   # snet-dataaicompute-prod-swe-001
-        "10.0.9.128/26"  # snet-dataaistreaming-prod-swe-001
+        "10.0.8.128/25", # snet-dataai-analytics-prod-swe
+        "10.0.9.0/25",   # snet-dataai-compute-prod-swe
+        "10.0.9.128/26"  # snet-dataai-streaming-prod-swe
       ]
-      destination_addresses = ["10.0.8.0/25"] # snet-dataaipe-prod-swe-001
+      destination_addresses = ["10.0.8.0/25"] # snet-dataai-pe-prod-swe
       destination_ports     = ["443", "6379"]
     }
 
@@ -244,7 +237,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-DataIA-to-SharedPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.8.128/25", "10.0.9.0/25"]
-      destination_addresses = ["10.0.11.0/25"] # snet-sharedpe-prod-swe-001
+      destination_addresses = ["10.0.11.0/25"] # snet-shared-pe-prod-swe
       destination_ports     = ["443"]
     }
   }
@@ -261,8 +254,8 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
     rule {
       name                  = "Allow-Apps-to-DataIA-ACA"
       protocols             = ["TCP"]
-      source_addresses      = ["10.0.10.0/25"] # snet-appsaca-prod-swe-001
-      destination_addresses = ["10.0.9.0/25"]  # snet-dataaicompute-prod-swe-001
+      source_addresses      = ["10.0.10.0/25"] # snet-apps-aca-prod-swe
+      destination_addresses = ["10.0.9.0/25"]  # snet-dataai-compute-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -270,8 +263,8 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
     rule {
       name                  = "Allow-Functions-to-ACAJob"
       protocols             = ["TCP"]
-      source_addresses      = ["10.0.10.0/25"] # snet-appsaca-prod-swe-001
-      destination_addresses = ["10.0.9.0/25"]  # snet-dataaicompute-prod-swe-001
+      source_addresses      = ["10.0.10.0/25"] # snet-apps-aca-prod-swe
+      destination_addresses = ["10.0.9.0/25"]  # snet-dataai-compute-prod-swe
       destination_ports     = ["443"]
     }
   }
@@ -306,12 +299,12 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         port = 80
       }
       source_addresses = [
-        "10.0.0.0/24",    # snet-mngt-prod-swe-001 (Hopping Host)
-        "10.0.4.0/23",    # snet-aksworkload-prod-swe-001 (AKS Workloads)
-        "10.0.6.0/24",    # snet-akssystem-prod-swe-001 (AKS System)
-        "10.0.10.0/25",   # snet-appsaca-prod-swe-001 (ACA Apps / Functions)
-        "10.0.9.0/25",    # snet-dataaicompute-prod-swe-001 (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shareddevops-prod-swe-001 (DevOps Tools CI/CD)
+        "10.0.0.0/24",    # snet-hub-mngt-prod-swe (Hopping Host)
+        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
+        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps / Functions)
+        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
       ]
       destination_fqdns = [
         "github.com",
@@ -329,12 +322,16 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         type = "Https"
         port = 443
       }
+      protocols {
+        type = "Http"
+        port = 80
+      }
       source_addresses = [
-        "10.0.4.0/23",    # snet-aksworkload-prod-swe-001 (AKS Workloads)
-        "10.0.6.0/24",    # snet-akssystem-prod-swe-001 (AKS System)
-        "10.0.10.0/25",   # snet-appsaca-prod-swe-001 (ACA Apps)
-        "10.0.9.0/25",    # snet-dataaicompute-prod-swe-001 (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shareddevops-prod-swe-001 (DevOps Tools CI/CD)
+        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
+        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps)
+        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
       ]
       destination_fqdns = [
         "*.azurecr.io",
@@ -358,14 +355,14 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         port = 80
       }
       source_addresses = [
-        "10.0.0.0/24",    # snet-mngt-prod-swe-001 (Hopping Host)
-        "10.0.4.0/23",    # snet-aksworkload-prod-swe-001 (AKS Workloads)
-        "10.0.6.0/24",    # snet-akssystem-prod-swe-001 (AKS System)
-        "10.0.7.128/27",  # snet-aksmonitoring-prod-swe-001 (AKS Monitoring)
-        "10.0.10.0/25",   # snet-appsaca-prod-swe-001 (ACA Apps)
-        "10.0.8.128/25",  # snet-dataaianalytics-prod-swe-001 (Data Analytics)
-        "10.0.9.0/25",    # snet-dataaicompute-prod-swe-001 (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shareddevops-prod-swe-001 (DevOps Tools)
+        "10.0.0.0/24",    # snet-hub-mngt-prod-swe (Hopping Host)
+        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
+        "10.0.7.128/27",  # snet-aks-monitoring-prod-swe (AKS Monitoring)
+        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps)
+        "10.0.8.128/25",  # snet-dataai-analytics-prod-swe (Data Analytics)
+        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools)
       ]
       destination_fqdns = [
         "*.ubuntu.com",
@@ -379,5 +376,3 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
     }
   }
 }
-
-

@@ -7,10 +7,10 @@ locals {
   hub_nsg_rules_raw = flatten([
     [for env in ["prod", "nprod"] :
       [for r in [
-        { name = "Allow-GatewayManager-In",  priority = 100, direction = "Inbound",  source = "GatewayManager",    dest = "*", port = "65200-65535", protocol = "Tcp", access = "Allow" },
-        { name = "Allow-AzureLB-In",         priority = 110, direction = "Inbound",  source = "AzureLoadBalancer", dest = "*", port = "*",           protocol = "*",   access = "Allow" },
-        { name = "Allow-Internet-HTTP-In",   priority = 120, direction = "Inbound",  source = "Internet",          dest = "*", port = "80,443",      protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "hub_${env}_snet-appgw-${env}-swe-001" })]
+        { name = "Allow-GatewayManager-In", priority = 100, direction = "Inbound", source = "GatewayManager",     dest = "*", port = "65200-65535", protocol = "Tcp", access = "Allow" },
+        { name = "Allow-AzureLB-In",         priority = 110, direction = "Inbound", source = "AzureLoadBalancer", dest = "*", port = "*",           protocol = "*",   access = "Allow" },
+        { name = "Allow-Internet-HTTP-In",   priority = 120, direction = "Inbound", source = "Internet",          dest = "*", port = "80,443",       protocol = "Tcp", access = "Allow" }
+      ] : merge(r, { nsg_key = "hub_${env}_snet-hub-appgw-${env}-swe" })]
     ],
 
     [for env in ["prod", "nprod"] :
@@ -30,7 +30,7 @@ locals {
       [for r in [
         { name = "Allow-AzurePlatformDNS-In", priority = 100, direction = "Inbound", source = "168.63.129.16", dest = "*", port = "53", protocol = "*", access = "Allow" },
         { name = "Allow-Bastion-to-Mngt",     priority = 200, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.2.192/26", dest = "VirtualNetwork", port = "22,3389", protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "hub_${env}_snet-mngt-${env}-swe-001" })]
+      ] : merge(r, { nsg_key = "hub_${env}_snet-hub-mngt-${env}-swe" })]
     ]
   ])
 
@@ -48,13 +48,13 @@ locals {
       [for r in [
         { name = "Allow-PE-Analytics-HTTPS", priority = 500, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.9.0/25", dest = "VirtualNetwork", port = "443",  protocol = "Tcp", access = "Allow" },
         { name = "Allow-PE-Analytics-SQL",   priority = 510, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.9.0/25", dest = "VirtualNetwork", port = "1433", protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "dataai_${env}_snet-dataaianalytics-${env}-swe-001" })]
+      ] : merge(r, { nsg_key = "dataai_${env}_snet-dataai-analytics-${env}-swe" })]
     ],
 
     [for env in ["prod", "nprod"] :
       [for r in [
         { name = "Allow-Analytics-to-Comp", priority = 500, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.8.128/25", dest = "VirtualNetwork", port = "443", protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "dataai_${env}_snet-dataaicompute-${env}-swe-001" })]
+      ] : merge(r, { nsg_key = "dataai_${env}_snet-dataai-compute-${env}-swe" })]
     ]
   ])
 
@@ -65,19 +65,19 @@ locals {
   data_ai_nsg_rules_nprod = { for k, v in local.data_ai_nsg_rules : k => v if length(regexall("_nprod_", v.nsg_key)) > 0 }
 
   # -----------------------------------------------------------------------
-  # 3. REGLAS AKS Y APPS (sin cambios — ya usa production para ambos envs)
+  # 3. REGLAS AKS Y APPS
   # -----------------------------------------------------------------------
   prod_nsg_rules_raw = flatten([
     [for env in ["prod", "nprod"] :
       [for r in [
         { name = "Allow-Firewall-to-Ingress", priority = 300, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.2.0/26", dest = "VirtualNetwork", port = "443", protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "aks_${env}_snet-aksingress-${env}-swe-001" })]
+      ] : merge(r, { nsg_key = "aks_${env}_snet-aks-ingress-${env}-swe" })]
     ],
 
     [for env in ["prod", "nprod"] :
       [for r in [
         { name = "Allow-Firewall-to-ACA", priority = 400, direction = "Inbound", source = "10.${env == "prod" ? "0" : "1"}.2.0/26", dest = "VirtualNetwork", port = "443", protocol = "Tcp", access = "Allow" }
-      ] : merge(r, { nsg_key = "apps_${env}_snet-appsaca-${env}-swe-001" })]
+      ] : merge(r, { nsg_key = "apps_${env}_snet-apps-aca-${env}-swe" })]
     ]
   ])
 

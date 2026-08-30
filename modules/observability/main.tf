@@ -22,7 +22,7 @@ locals {
 # Ejemplo: log-monitoring-prod-swe
 # -------------------------------------------------------------------------
 resource "azurerm_log_analytics_workspace" "central" {
-  name                = "log-monitoring-prod-${local.region_suffix}"
+  name                = "la-monitoring-prod-${local.region_suffix}"
   location            = var.location
   resource_group_name = local.monitoring_rg_name
   sku                 = "PerGB2018"
@@ -53,6 +53,7 @@ resource "azurerm_log_analytics_solution" "sentinel" {
   resource_group_name   = local.monitoring_rg_name
   workspace_resource_id = azurerm_log_analytics_workspace.central.id
   workspace_name        = azurerm_log_analytics_workspace.central.name
+  
 
   plan {
     publisher = "Microsoft"
