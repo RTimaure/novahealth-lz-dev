@@ -105,12 +105,13 @@ resource "azurerm_route_table" "hub_mngt_nprod" {
   }
 }
 
+/*
 resource "azurerm_subnet_route_table_association" "hub_mngt_nprod" {
   provider       = azurerm.production
   subnet_id      = azurerm_subnet.hub_nprod["hub_nprod_snet-hub-mngt-nprod-swe"].id
   route_table_id = azurerm_route_table.hub_mngt_nprod.id
 }
-
+*/
 # -------------------------------------------------------------------------
 # 3. AKS SPOKE - PROD (SUSCRIPCIÓN: PRODUCTION)
 # -------------------------------------------------------------------------
@@ -337,7 +338,7 @@ resource "azurerm_route_table" "data_nprod" {
   }
 }
 
-resource "azurerm_subnet_route_table_association" "data_nprod" {
+/*resource "azurerm_subnet_route_table_association" "data_nprod" {
   provider = azurerm.production
   for_each = toset([
     "dataai_nprod_snet-dataai-analytics-nprod-swe",
@@ -348,7 +349,7 @@ resource "azurerm_subnet_route_table_association" "data_nprod" {
   subnet_id      = azurerm_subnet.data_nprod[each.key].id
   route_table_id = azurerm_route_table.data_nprod.id
 }
-
+*/
 # -------------------------------------------------------------------------
 # 7. APPS SPOKE - PROD (SUSCRIPCIÓN: PRODUCTION)
 # -------------------------------------------------------------------------
@@ -410,7 +411,7 @@ resource "azurerm_subnet_route_table_association" "apps_prod" {
 # -------------------------------------------------------------------------
 # 8. APPS SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
-resource "azurerm_route_table" "apps_nprod" {
+/*resource "azurerm_route_table" "apps_nprod" {
   provider                      = azurerm.production
   name                          = "rt-apps-nprod-swe"
   location                      = var.location
@@ -464,7 +465,7 @@ resource "azurerm_subnet_route_table_association" "apps_nprod" {
   subnet_id      = azurerm_subnet.prod[each.key].id
   route_table_id = azurerm_route_table.apps_nprod.id
 }
-
+*/
 # -------------------------------------------------------------------------
 # 9. SHARED SERVICES SPOKE - PROD (SUSCRIPCIÓN: DATA_AI)
 # -------------------------------------------------------------------------
@@ -526,7 +527,7 @@ resource "azurerm_subnet_route_table_association" "shared_prod" {
 # -------------------------------------------------------------------------
 # 10. SHARED SERVICES SPOKE - NPROD (SUSCRIPCIÓN: PRODUCTION - rg-netdev-dev-swe)
 # -------------------------------------------------------------------------
-resource "azurerm_route_table" "shared_nprod" {
+/*resource "azurerm_route_table" "shared_nprod" {
   provider                      = azurerm.production
   name                          = "rt-shared-nprod-swe"
   location                      = var.location
@@ -580,3 +581,4 @@ resource "azurerm_subnet_route_table_association" "shared_nprod" {
   subnet_id      = azurerm_subnet.prod[each.key].id
   route_table_id = azurerm_route_table.shared_nprod.id
 }
+*/

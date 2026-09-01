@@ -1,3 +1,4 @@
+
 locals {
 	target_subscriptions = {
 		connectivity = var.connectivity_subscription_id

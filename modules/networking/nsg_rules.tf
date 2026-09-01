@@ -106,7 +106,7 @@ resource "azurerm_network_security_rule" "hub_rules_prod" {
   resource_group_name         = azurerm_network_security_group.hub_nsgs_prod[each.value.nsg_key].resource_group_name
   network_security_group_name = azurerm_network_security_group.hub_nsgs_prod[each.value.nsg_key].name
 }
-
+/*
 resource "azurerm_network_security_rule" "hub_rules_nprod" {
   provider = azurerm.production
   for_each = local.hub_nsg_rules_nprod
@@ -125,7 +125,7 @@ resource "azurerm_network_security_rule" "hub_rules_nprod" {
   resource_group_name         = azurerm_network_security_group.hub_nsgs_nprod[each.value.nsg_key].resource_group_name
   network_security_group_name = azurerm_network_security_group.hub_nsgs_nprod[each.value.nsg_key].name
 }
-
+*/
 resource "azurerm_network_security_rule" "data_ai_rules_prod" {
   provider = azurerm.data_ai
   for_each = local.data_ai_nsg_rules_prod
@@ -144,7 +144,7 @@ resource "azurerm_network_security_rule" "data_ai_rules_prod" {
   resource_group_name         = azurerm_network_security_group.data_nsgs_prod[each.value.nsg_key].resource_group_name
   network_security_group_name = azurerm_network_security_group.data_nsgs_prod[each.value.nsg_key].name
 }
-
+/*
 resource "azurerm_network_security_rule" "data_ai_rules_nprod" {
   provider = azurerm.production
   for_each = local.data_ai_nsg_rules_nprod
@@ -163,7 +163,7 @@ resource "azurerm_network_security_rule" "data_ai_rules_nprod" {
   resource_group_name         = azurerm_network_security_group.data_nsgs_nprod[each.value.nsg_key].resource_group_name
   network_security_group_name = azurerm_network_security_group.data_nsgs_nprod[each.value.nsg_key].name
 }
-
+*/
 resource "azurerm_network_security_rule" "prod_rules" {
   provider = azurerm.production
   for_each = local.prod_nsg_rules

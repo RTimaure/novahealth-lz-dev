@@ -67,7 +67,7 @@ locals {
         "snet-shared-devops-prod-swe" = "10.0.11.192/27"
       }
     }
-    hub_nprod = {
+    /*hub_nprod = {
       name          = "vnet-hub-nprod-swe"
       rg_name       = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
       address_space = ["10.1.0.0/22"]
@@ -124,7 +124,7 @@ locals {
         "snet-shared-apim-nprod-swe"   = "10.1.11.128/26"
         "snet-shared-devops-nprod-swe"  = "10.1.11.192/27"
       }
-    }
+    }*/
     onprem_prod = {
       name          = "vnet-onprem-prod-swe"
       rg_name       = lookup(var.resource_group_names, "rg-nethub-prod-swe", "rg-nethub-prod-swe")
@@ -158,15 +158,15 @@ locals {
 
   # --- HUB: split por suscripción real ---
   hub_vnets_prod    = { for k, v in local.vnets : k => v if k == "hub_prod" || k == "onprem_prod" }
-  hub_vnets_nprod   = { for k, v in local.vnets : k => v if k == "hub_nprod" }
+  #hub_vnets_nprod   = { for k, v in local.vnets : k => v if k == "hub_nprod" }
   hub_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_prod" || v.vnet_key == "onprem_prod" }
-  hub_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_nprod" }
+  #hub_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_nprod" }
 
   # --- DATA & IA: split por suscripción real ---
   data_vnets_prod    = { for k, v in local.vnets : k => v if k == "dataai_prod" }
-  data_vnets_nprod   = { for k, v in local.vnets : k => v if k == "dataai_nprod" }
+  #data_vnets_nprod   = { for k, v in local.vnets : k => v if k == "dataai_nprod" }
   data_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_prod" }
-  data_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_nprod" }
+  #data_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_nprod" }
 
   # --- PROD (aks/apps): usa provider=production ---
   prod_vnets   = { for k, v in local.vnets : k => v if length(regexall("^(aks|apps)", k)) > 0 || k == "shared_nprod" }
@@ -178,7 +178,7 @@ locals {
 
   # Para los peerings hub->prod
   prod_vnets_envprod  = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) == 0 }
-  prod_vnets_envnprod = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) > 0 }
+  #prod_vnets_envnprod = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) > 0 }
 }
 
 # =========================================================================
@@ -237,7 +237,7 @@ resource "azurerm_subnet_network_security_group_association" "hub_prod" {
 # =========================================================================
 # DOMINIO HUB — NPROD/DEV (SUSCRIPCIÓN: PRODUCTION)
 # =========================================================================
-resource "azurerm_virtual_network" "hub_nprod" {
+/*resource "azurerm_virtual_network" "hub_nprod" {
   provider            = azurerm.production
   for_each            = local.hub_vnets_nprod
   name                = each.value.name
@@ -286,7 +286,7 @@ resource "azurerm_subnet_network_security_group_association" "hub_nprod" {
     azurerm_network_security_rule.hub_rules_nprod
   ]
 }
-
+*/
 # =========================================================================
 # DOMINIO DATA & IA — PROD (SUSCRIPCIÓN: DATA AND IA PLATFORM)
 # =========================================================================
@@ -332,7 +332,7 @@ resource "azurerm_subnet_network_security_group_association" "data_prod" {
 # =========================================================================
 # DOMINIO DATA & IA — NPROD/DEV (SUSCRIPCIÓN: PRODUCTION)
 # =========================================================================
-resource "azurerm_virtual_network" "data_nprod" {
+/*resource "azurerm_virtual_network" "data_nprod" {
   provider            = azurerm.production
   for_each            = local.data_vnets_nprod
   name                = each.value.name
@@ -370,7 +370,7 @@ resource "azurerm_subnet_network_security_group_association" "data_nprod" {
     azurerm_network_security_rule.data_ai_rules_nprod
   ]
 }
-
+*/
 # =========================================================================
 # DOMINIO SHARED SERVICES — PROD (SUSCRIPCIÓN: PLATFORM SERVICES / DATA_AI)
 # =========================================================================
@@ -472,6 +472,7 @@ resource "azurerm_virtual_network_peering" "hub_to_prod_prod" {
   depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.prod, azurerm_virtual_network_gateway.vpngw]
 }
 
+/*
 resource "azurerm_virtual_network_peering" "hub_to_prod_nprod" {
   provider                     = azurerm.production
   for_each                     = local.prod_vnets_envnprod
@@ -485,8 +486,8 @@ resource "azurerm_virtual_network_peering" "hub_to_prod_nprod" {
   use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.hub_nprod, azurerm_subnet.prod]
 }
-
-resource "azurerm_virtual_network_peering" "prod_to_hub" {
+*/
+/*resource "azurerm_virtual_network_peering" "prod_to_hub" {
   provider                     = azurerm.production
   for_each                     = local.prod_vnets
   name                         = length(regexall("nprod", each.key)) > 0 ? "peer-${replace(each.key, "_nprod", "")}-hub-dev-swe" : "peer-${replace(each.key, "_prod", "")}-hub-prod-swe"
@@ -499,7 +500,7 @@ resource "azurerm_virtual_network_peering" "prod_to_hub" {
   use_remote_gateways          = length(regexall("nprod", each.key)) > 0 ? false : true
   depends_on                   = [azurerm_subnet.prod, azurerm_subnet.hub_prod, azurerm_subnet.hub_nprod, azurerm_firewall.fw, azurerm_virtual_network_gateway.vpngw]
 }
-
+*/
 resource "azurerm_virtual_network_peering" "hub_to_data_prod" {
   provider                     = azurerm.connectivity
   for_each                     = local.data_vnets_prod
@@ -513,7 +514,7 @@ resource "azurerm_virtual_network_peering" "hub_to_data_prod" {
   use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.hub_prod, azurerm_subnet.data_prod, azurerm_virtual_network_gateway.vpngw]
 }
-
+/*
 resource "azurerm_virtual_network_peering" "hub_to_data_nprod" {
   provider                     = azurerm.production
   for_each                     = local.data_vnets_nprod
@@ -527,7 +528,7 @@ resource "azurerm_virtual_network_peering" "hub_to_data_nprod" {
   use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.hub_nprod, azurerm_subnet.data_nprod]
 }
-
+*/
 resource "azurerm_virtual_network_peering" "data_to_hub_prod" {
   provider                     = azurerm.data_ai
   for_each                     = local.data_vnets_prod
@@ -542,7 +543,7 @@ resource "azurerm_virtual_network_peering" "data_to_hub_prod" {
   depends_on                   = [azurerm_subnet.data_prod, azurerm_subnet.hub_prod, azurerm_virtual_network_gateway.vpngw]
 }
 
-resource "azurerm_virtual_network_peering" "data_to_hub_nprod" {
+/*resource "azurerm_virtual_network_peering" "data_to_hub_nprod" {
   provider                     = azurerm.production
   for_each                     = local.data_vnets_nprod
   name                         = "peer-dataai-hub-dev-swe"
@@ -555,7 +556,7 @@ resource "azurerm_virtual_network_peering" "data_to_hub_nprod" {
   use_remote_gateways          = false
   depends_on                   = [azurerm_subnet.data_nprod, azurerm_subnet.hub_nprod]
 }
-
+*/
 resource "azurerm_virtual_network_peering" "hub_to_shared_prod" {
   provider                     = azurerm.connectivity
   for_each                     = local.shared_vnets_prod

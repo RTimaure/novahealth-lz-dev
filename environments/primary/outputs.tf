@@ -33,11 +33,11 @@ output "bastion_public_ip" {
 output "vpngw_public_ip" {
 	value = module.networking.vpngw_public_ip
 }
-
+/*
 output "data_subnets" {
 	value = module.networking.data_subnets
 }
-
+*/
 output "log_analytics_workspace_id" {
 	value = module.observability.log_analytics_workspace_id
 }

@@ -34,6 +34,8 @@ output "vpngw_public_ip" {
 	value = module.networking.vpngw_public_ip
 }
 
+/*
 output "data_subnets" {
 	value = module.networking.data_subnets
 }
+*/

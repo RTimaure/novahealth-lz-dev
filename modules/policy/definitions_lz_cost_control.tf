@@ -30,6 +30,7 @@ locals {
             # 4. Condición: Se considera "conforme" si el presupuesto existe y tiene un importe asignado
             existenceCondition = {
               field  = "Microsoft.Consumption/budgets/amount"
+              //"greater": 0
               exists = "true"
             }
           }
