@@ -219,7 +219,7 @@ resource "azurerm_route_table" "aks_nprod" {
   }
 }
 
-resource "azurerm_subnet_route_table_association" "aks_nprod" {
+/*resource "azurerm_subnet_route_table_association" "aks_nprod" {
   provider = azurerm.production
   for_each = toset([
     "aks_nprod_snet-aks-workload-nprod-swe",
@@ -231,7 +231,7 @@ resource "azurerm_subnet_route_table_association" "aks_nprod" {
   subnet_id      = azurerm_subnet.prod[each.key].id
   route_table_id = azurerm_route_table.aks_nprod.id
 }
-
+*/
 # -------------------------------------------------------------------------
 # 5. DATA & IA SPOKE - PROD (SUSCRIPCIÓN: DATA AND IA PLATFORM)
 # -------------------------------------------------------------------------
