@@ -1,0 +1,98 @@
+name: "Terraform Validate & Lint"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.tf"
+      - ".github/workflows/**"
+      - ".tflint.hcl"
+  push:
+    branches: [main]
+    paths:
+      - "**.tf"
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+
+jobs:
+  fmt:
+    name: Terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive -diff
+
+  validate:
+    name: Validate (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - environments/primary
+          - environments/dr
+          - modules/networking
+          - modules/observability
+          - modules/policy
+          - modules/rbac
+          - modules/resource_groups
+          - modules/subscriptions
+          - modules/management_groups
+          - modules/finops
+          - modules/jumpbox
+          - modules/rag_infrastructure
+          - modules/test_vm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # backend-less init: only checks HCL syntax/types, no state access needed.
+      - name: terraform init (no backend)
+        working-directory: ${{ matrix.stack }}
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        working-directory: ${{ matrix.stack }}
+        run: terraform validate
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run TFLint (recursive)
+        run: tflint --recursive --format compact
+
+  security:
+    name: Security scan (tfsec)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: true

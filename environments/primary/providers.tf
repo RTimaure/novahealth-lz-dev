@@ -11,13 +11,15 @@ terraform {
 		}
 	}
 
-	  # ESTE ES EL BLOQUE CLAVE PARA COMPARTIR EL ESTADO
+	# Remote state, isolated per environment via a distinct key.
+	# Values for resource_group_name / storage_account_name / container_name
+	# are intentionally omitted here and must be supplied at `terraform init`
+	# time via `-backend-config` (see .github/workflows/terraform-apply.yml),
+	# so the same code can target different backend storage per environment
+	# without hardcoding secrets/state locations in version control.
 	backend "azurerm" {
-    resource_group_name  = "rg-terraform-tfm-state"     # El grupo que creó en el Paso 1
-    storage_account_name = "sttfmstateshared"           # El nombre de nuestro Storage Account
-    container_name       = "terraform-state"            # El nombre del contenedor
-    key                  = "landingzone.tfstate"        # El nombre que tendrá el archivo en la nube
-  }
+		key = "primary.tfstate"
+	}
 }
 
 provider "azurerm" {

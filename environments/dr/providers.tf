@@ -6,6 +6,16 @@ terraform {
 			version = "~> 3.0"
 		}
 	}
+
+	# Remote state, isolated per environment via a distinct key.
+	# Values for resource_group_name / storage_account_name / container_name
+	# are intentionally omitted here and must be supplied at `terraform init`
+	# time via `-backend-config` (see .github/workflows/terraform-apply.yml),
+	# so the same code can target different backend storage per environment
+	# without hardcoding secrets/state locations in version control.
+	backend "azurerm" {
+		key = "dr.tfstate"
+	}
 }
 
 provider "azurerm" {
