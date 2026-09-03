@@ -134,3 +134,98 @@ module "observability" {
 
 	depends_on = [module.resource_groups, module.networking]
 }
+
+#------------------------------------------------------------------------
+# JUMPBOX (VM para el acceso seguro via bastion a la red corporativa)
+#------------------------------------------------------------------------
+module "jumpbox" {
+	source = "../../modules/jumpbox"
+
+	providers = {
+		azurerm = azurerm.connectivity
+	}
+
+	location             = var.primary_location
+	resource_group_name  = module.resource_groups.rg_names["rg-mgmtvm-prod-swe"]
+	subnet_id            = module.networking.subnets["hub_prod_snet-hub-mngt-prod-swe"]
+	tags                 = module.resource_groups.rg_tags["rg-mgmtvm-prod-swe"]
+
+	environment          = "prod"
+	region_suffix         = "swe"
+
+	admin_username        = var.jumpbox_admin_username
+	admin_password        = var.jumpbox_admin_password
+
+	log_analytics_workspace_id  = module.observability.log_analytics_workspace_id
+	log_analytics_workspace_key = module.observability.log_analytics_workspace_primary_shared_key
+
+	depends_on = [module.networking, module.observability, module.resource_groups]
+}
+
+# =========================================================================
+# VM TESTER (PRUEBAS DE CONECTIVIDAD)
+# =========================================================================
+
+locals {
+  test_vm_spoke_map = {
+    aks = {
+      subnet_key   = "aks_prod_snet-aks-workload-prod-swe"
+      rg_key       = "rg-aks-prod-swe"
+      nsg_key      = "aks_prod_snet-aks-workload-prod-swe"
+      provider_grp = "production"
+    }
+    apps = {
+      subnet_key   = "apps_prod_snet-apps-messaging-prod-swe"
+      rg_key       = "rg-apps-prod-swe"
+      nsg_key      = "apps_prod_snet-apps-messaging-prod-swe"
+      provider_grp = "production"
+    }
+    dataai = {
+      subnet_key   = "dataai_prod_snet-dataai-compute-prod-swe"
+      rg_key       = "rg-dataai-prod-swe"
+      nsg_key      = "dataai_prod_snet-dataai-compute-prod-swe"
+      provider_grp = "data_ai"
+    }
+    shared = {
+      subnet_key   = "shared_prod_snet-shared-devops-prod-swe"
+      rg_key       = "rg-shared-prod-swe"
+      nsg_key      = "shared_prod_snet-shared-devops-prod-swe"
+      provider_grp = "data_ai"
+    }
+  }
+
+  test_vm_selected = local.test_vm_spoke_map[var.test_vm_spoke]
+
+  test_vm_tags = merge(var.tags, {
+    environmentType = "primary"
+    environment     = "prod"
+    region          = "SwedenCentral"
+    owner           = "grp-novahealth-network-team"
+    costCenter      = "CC-004"
+    project         = "NovaHealth-LandingZone"
+    workload        = "platformshared-services"
+    criticality     = "Low"
+  })
+}
+
+module "test_vm" {
+  source = "../../modules/test_vm"
+
+  providers = {
+  azurerm.target = azurerm.production
+  }
+
+  location                          = var.location
+  resource_group_name               = module.resource_groups.rg_names[local.test_vm_selected.rg_key]
+  subnet_id                         = module.networking.subnets[local.test_vm_selected.subnet_key]
+  existing_nsg_name                 = module.networking.nsgs[local.test_vm_selected.nsg_key].name
+  existing_nsg_resource_group_name  = module.networking.nsgs[local.test_vm_selected.nsg_key].resource_group_name
+
+  vm_scope             = var.test_vm_spoke
+  environment            = "prod"
+  region_suffix          = "swe"
+  admin_password          = var.test_vm_admin_password
+  tags                    = local.test_vm_tags
+
+  depends_on = [module.networking]
+}
