@@ -98,9 +98,9 @@ resource "azurerm_consumption_budget_subscription" "lz_budgets" {
   time_grain = "Monthly"
 
   time_period {
-    start_date = "2026-08-01T00:00:00Z"
-    end_date   = "2030-12-31T00:00:00Z"
-  }
+  start_date = "${formatdate("YYYY-MM", timestamp())}-01T00:00:00Z"
+  end_date   = "2030-12-31T00:00:00Z"
+}
 
   # Alerta temprana: 50% del presupuesto mensual (Actual)
   notification {
