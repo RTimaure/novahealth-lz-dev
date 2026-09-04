@@ -14,7 +14,7 @@ resource "azurerm_route_table" "hub_mngt_prod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-nethub-prod-swe", "rg-nethub-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-nethub-prod-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"
@@ -67,8 +67,8 @@ resource "azurerm_route_table" "hub_mngt_nprod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
-
+  tags = local.platform_tags
+  
   route {
     name                   = "to-internet"
     address_prefix         = "0.0.0.0/0"
@@ -121,8 +121,8 @@ resource "azurerm_route_table" "aks_prod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netaks-prod-swe", "rg-netaks-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netaks-prod-swe", var.tags)
-
+  tags = local.platform_tags
+  
   route {
     name                   = "to-internet"
     address_prefix         = "0.0.0.0/0"
@@ -181,7 +181,7 @@ resource "azurerm_route_table" "aks_nprod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"
@@ -241,7 +241,7 @@ resource "azurerm_route_table" "data_prod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netdataai-prod-swe", "rg-netdataai-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netdataai-prod-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"
@@ -300,7 +300,7 @@ resource "azurerm_route_table" "data_nprod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netdev-dev-swe", "rg-netdev-dev-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netdev-dev-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"
@@ -359,7 +359,7 @@ resource "azurerm_route_table" "apps_prod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netapps-prod-swe", "rg-netapps-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netapps-prod-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"
@@ -475,7 +475,7 @@ resource "azurerm_route_table" "shared_prod" {
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netshared-prod-swe", "rg-netshared-prod-swe")
   disable_bgp_route_propagation = false
-  tags                          = lookup(var.resource_group_tags, "rg-netshared-prod-swe", var.tags)
+  tags = local.platform_tags
 
   route {
     name                   = "to-internet"

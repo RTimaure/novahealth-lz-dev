@@ -11,15 +11,45 @@ locals {
 
   # Mapeo de región para sufijo si var.location varía
   region_suffix = lower(var.location) == "swedencentral" ? "swe" : (lower(var.location) == "westeurope" ? "weu" : "swe")
+  region_name   = lower(var.location) == "swedencentral" ? "SwedenCentral" : "WestEurope"
 
-  # Tags dinámicos obtenidos directamente del Resource Group o combinados con var.tags
-  observability_tags = lookup(var.resource_group_tags, "rg-monitoring-prod-swe", var.tags)
+  # -------------------------------------------------------------------------
+  # 1. TAGS OPERACIONALES (CC-004: Management)
+  # -------------------------------------------------------------------------
+  management_tags = merge(
+    var.tags,
+    {
+      environmentType = lower(var.location) == "swedencentral" ? "primary" : "dr"
+      environment     = "prod"
+      region          = local.region_name
+      owner           = "grp-novahealth-ops-team"
+      costCenter      = "CC-004"
+      project         = "NovaHealth-LandingZone"
+      workload        = "platformshared-services"
+      criticality     = "High"
+    }
+  )
+
+  # -------------------------------------------------------------------------
+  # 2. TAGS SEGURIDAD / SIEM (CC-003: Security)
+  # -------------------------------------------------------------------------
+  sentinel_tags = merge(
+    var.tags,
+    {
+      environmentType = lower(var.location) == "swedencentral" ? "primary" : "dr"
+      environment     = "prod"
+      region          = local.region_name
+      owner           = "grp-novahealth-security-team"
+      costCenter      = "CC-003"
+      project         = "NovaHealth-LandingZone"
+      workload        = "security-compliance"
+      criticality     = "Critical"
+    }
+  )
 }
 
 # -------------------------------------------------------------------------
-# 1. LOG ANALYTICS WORKSPACE CENTRALIZADO
-# Naming Cluster C1 (4 segmentos): [prefix]-[purpose]-[env]-[region]
-# Ejemplo: log-monitoring-prod-swe
+# 1. LOG ANALYTICS WORKSPACE CENTRALIZADO — CC-004 (Management)
 # -------------------------------------------------------------------------
 resource "azurerm_log_analytics_workspace" "central" {
   name                = "la-monitoring-prod-${local.region_suffix}"
@@ -27,13 +57,11 @@ resource "azurerm_log_analytics_workspace" "central" {
   resource_group_name = local.monitoring_rg_name
   sku                 = "PerGB2018"
   retention_in_days   = var.log_analytics_retention_in_days
-  tags                = local.observability_tags
+  tags                = merge(local.management_tags, { criticality = "Critical" })
 }
 
 # -------------------------------------------------------------------------
-# 2. APPLICATION INSIGHTS (WORKSPACE-BASED)
-# Naming Cluster C2 (5 segmentos): [prefix]-[purpose]-[env]-[region]-[idx]
-# Ejemplo: appi-monitoring-prod-swe-001
+# 2. APPLICATION INSIGHTS (WORKSPACE-BASED) — CC-004 (Management)
 # -------------------------------------------------------------------------
 resource "azurerm_application_insights" "app_insights" {
   name                = "appi-monitoring-prod-${local.region_suffix}-001"
@@ -41,11 +69,11 @@ resource "azurerm_application_insights" "app_insights" {
   resource_group_name = local.monitoring_rg_name
   workspace_id        = azurerm_log_analytics_workspace.central.id
   application_type    = "web"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 }
 
 # -------------------------------------------------------------------------
-# 3. MICROSOFT SENTINEL (SECURITY INSIGHTS SOLUTION)
+# 3. MICROSOFT SENTINEL (SECURITY INSIGHTS SOLUTION) — CC-003 (Security)
 # -------------------------------------------------------------------------
 resource "azurerm_log_analytics_solution" "sentinel" {
   solution_name         = "SecurityInsights"
@@ -53,26 +81,23 @@ resource "azurerm_log_analytics_solution" "sentinel" {
   resource_group_name   = local.monitoring_rg_name
   workspace_resource_id = azurerm_log_analytics_workspace.central.id
   workspace_name        = azurerm_log_analytics_workspace.central.name
-  
 
   plan {
     publisher = "Microsoft"
     product   = "OMSGallery/SecurityInsights"
   }
 
-  tags = local.observability_tags
+  tags = local.sentinel_tags
 }
 
 # -------------------------------------------------------------------------
-# 4. MONITOR ACTION GROUP (NOTIFICACIONES OPERACIONALES Y SRE)
-# Naming Cluster C1 (4 segmentos): [prefix]-[purpose]-[env]-[region]
-# Ejemplo: ag-monitoring-prod-swe
+# 4. MONITOR ACTION GROUP — CC-004 (Management)
 # -------------------------------------------------------------------------
 resource "azurerm_monitor_action_group" "ops_alerts" {
   name                = "ag-monitoring-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   short_name          = "ag-ops-alert"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   email_receiver {
     name                    = "NovaHealth-Ops-Team"

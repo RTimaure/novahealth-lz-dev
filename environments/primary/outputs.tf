@@ -47,6 +47,7 @@ output "application_insights_connection_string" {
 	sensitive = true
 }
 
+
 #------------------------------------------------------------------------
 # Outputs del módulo jumpbox
 #------------------------------------------------------------------------
