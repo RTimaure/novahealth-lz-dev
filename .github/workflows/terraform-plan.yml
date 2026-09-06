@@ -73,6 +73,7 @@ jobs:
       - name: terraform plan
         id: plan
         run: |
+          set -o pipefail
           terraform plan -input=false -no-color \
             -var-file="${{ matrix.environment }}.tfvars" \
             -out=tfplan | tee plan_output.txt
