@@ -32,9 +32,9 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "connectivity"
+  alias                      = "connectivity"
   skip_provider_registration = true
-  subscription_id = var.connectivity_subscription_id
+  subscription_id            = var.connectivity_subscription_id
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
@@ -43,19 +43,8 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "identity"
-  subscription_id = var.identity_subscription_id
-  skip_provider_registration = true
-  features {
-    resource_group {
-      prevent_deletion_if_contains_resources = false
-    }
-  }
-}
-
-provider "azurerm" {
-  alias           = "management"
-  subscription_id = var.management_subscription_id
+  alias                      = "identity"
+  subscription_id            = var.identity_subscription_id
   skip_provider_registration = true
   features {
     resource_group {
@@ -65,8 +54,8 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "production"
-  subscription_id = var.production_subscription_id
+  alias                      = "management"
+  subscription_id            = var.management_subscription_id
   skip_provider_registration = true
   features {
     resource_group {
@@ -76,8 +65,19 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias           = "data_ai"
-  subscription_id = var.data_ai_subscription_id
+  alias                      = "production"
+  subscription_id            = var.production_subscription_id
+  skip_provider_registration = true
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
+provider "azurerm" {
+  alias                      = "data_ai"
+  subscription_id            = var.data_ai_subscription_id
   skip_provider_registration = true
   features {
     resource_group {
