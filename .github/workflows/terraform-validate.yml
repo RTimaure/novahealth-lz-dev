@@ -41,17 +41,17 @@ jobs:
         stack:
           - environments/primary
         #  - environments/dr
-          - modules/networking
-          - modules/observability
-          - modules/policy
-          - modules/rbac
-          - modules/resource_groups
-          - modules/subscriptions
-          - modules/management_groups
-          - modules/finops
-          - modules/jumpbox
-          - modules/rag_infrastructure
-          - modules/test_vm
+        #  - modules/networking
+        #  - modules/observability
+        #  - modules/policy
+        #  - modules/rbac
+        #  - modules/resource_groups
+        #  - modules/subscriptions
+        #  - modules/management_groups
+        #  - modules/finops
+        #  - modules/jumpbox
+        #  - modules/rag_infrastructure
+        #  - modules/test_vm 
     steps:
       - uses: actions/checkout@v4
 
