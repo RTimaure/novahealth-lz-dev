@@ -65,10 +65,10 @@ jobs:
 
       # --- PASO INYECTOR DE VARIABLES ---
       - name: Generate tfvars file
+        env:
+          RAW_TFVARS: ${{ secrets.TFVARS_PRIMARY }}
         run: |
-          if [ "${{ matrix.environment }}" = "primary" ]; then
-            echo "${{ secrets.TFVARS_PRIMARY }}" > primary.tfvars
-          fi
+          echo "$RAW_TFVARS" > primary.tfvars
 
       - name: terraform plan
         id: plan
