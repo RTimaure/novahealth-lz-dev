@@ -26,7 +26,7 @@ resource "azurerm_private_dns_resolver_inbound_endpoint" "hub_dns_inbound" {
     subnet_id                    = azurerm_subnet.hub_prod["hub_prod_snet-hub-dnsin-prod-swe"].id
     private_ip_allocation_method = "Dynamic"
   }
-  tags                    = lookup(var.resource_group_tags, "rg-dns-prod-swe", var.tags)
+  tags = lookup(var.resource_group_tags, "rg-dns-prod-swe", var.tags)
 }
 
 resource "azurerm_private_dns_resolver_outbound_endpoint" "hub_dns_outbound" {

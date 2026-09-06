@@ -53,7 +53,7 @@ resource "azurerm_log_analytics_solution" "sentinel" {
   resource_group_name   = local.monitoring_rg_name
   workspace_resource_id = azurerm_log_analytics_workspace.central.id
   workspace_name        = azurerm_log_analytics_workspace.central.name
-  
+
 
   plan {
     publisher = "Microsoft"

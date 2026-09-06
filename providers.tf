@@ -55,7 +55,7 @@ provider "azurerm" {
 # Usará el mismo ID de suscripción, pero con el nombre que el estado viejo busca
 provider "azurerm" {
   alias           = "data_ia"
-  subscription_id = local.target_subscriptions["data_ai"] 
+  subscription_id = local.target_subscriptions["data_ai"]
   features {}
 }
 

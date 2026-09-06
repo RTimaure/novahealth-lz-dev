@@ -26,10 +26,10 @@ locals {
           details = {
             # 3. Azure buscará si existe un presupuesto dentro de esa suscripción
             type = "Microsoft.Consumption/budgets"
-            
+
             # 4. Condición: Se considera "conforme" si el presupuesto existe y tiene un importe asignado
             existenceCondition = {
-              field  = "Microsoft.Consumption/budgets/amount"
+              field = "Microsoft.Consumption/budgets/amount"
               //"greater": 0
               exists = "true"
             }
@@ -37,7 +37,7 @@ locals {
         }
       })
     },
-        "allowed_vm_skus" = {
+    "allowed_vm_skus" = {
       display_name = "Allowed Virtual Machine SKUs (NovaHealth Cost Control)"
       description  = "Restringe el despliegue de máquinas virtuales únicamente a las familias de SKUs corporativas aprobadas para control de costes (Standard_D2s_v5, Standard_D4s_v5, Standard_B2s_v2, Standard_B4s_v2)"
       mode         = "Indexed"
@@ -55,7 +55,7 @@ locals {
             {
               not = {
                 field = "Microsoft.Compute/virtualMachines/sku.name"
-                in    = [
+                in = [
                   "Standard_D2s_v5",
                   "Standard_D4s_v5",
                   "Standard_B2s_v2",

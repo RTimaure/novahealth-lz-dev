@@ -112,7 +112,7 @@ module "finops" {
   source = "./modules/finops"
 
   target_subscriptions = local.target_subscriptions
-  notification_emails   = ["finops@novahealth.com"]
+  notification_emails  = ["finops@novahealth.com"]
 
   depends_on = [module.networking]
 }

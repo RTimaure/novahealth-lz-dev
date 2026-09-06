@@ -157,15 +157,15 @@ locals {
   }
 
   # --- HUB: split por suscripción real ---
-  hub_vnets_prod    = { for k, v in local.vnets : k => v if k == "hub_prod" || k == "onprem_prod" }
+  hub_vnets_prod = { for k, v in local.vnets : k => v if k == "hub_prod" || k == "onprem_prod" }
   #hub_vnets_nprod   = { for k, v in local.vnets : k => v if k == "hub_nprod" }
-  hub_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_prod" || v.vnet_key == "onprem_prod" }
+  hub_subnets_prod = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_prod" || v.vnet_key == "onprem_prod" }
   #hub_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "hub_nprod" }
 
   # --- DATA & IA: split por suscripción real ---
-  data_vnets_prod    = { for k, v in local.vnets : k => v if k == "dataai_prod" }
+  data_vnets_prod = { for k, v in local.vnets : k => v if k == "dataai_prod" }
   #data_vnets_nprod   = { for k, v in local.vnets : k => v if k == "dataai_nprod" }
-  data_subnets_prod  = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_prod" }
+  data_subnets_prod = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_prod" }
   #data_subnets_nprod = { for k, v in local.subnet_map : k => v if v.vnet_key == "dataai_nprod" }
 
   # --- PROD (aks/apps): usa provider=production ---
@@ -177,7 +177,7 @@ locals {
   shared_subnets_prod = { for k, v in local.subnet_map : k => v if v.vnet_key == "shared_prod" }
 
   # Para los peerings hub->prod
-  prod_vnets_envprod  = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) == 0 }
+  prod_vnets_envprod = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) == 0 }
   #prod_vnets_envnprod = { for k, v in local.prod_vnets : k => v if length(regexall("nprod", k)) > 0 }
 }
 
@@ -589,11 +589,11 @@ resource "azurerm_virtual_network_peering" "shared_to_hub_prod" {
 # 1. PEERING: AKS SPOKE -> HUB PROD
 # -------------------------------------------------------------------------
 resource "azurerm_virtual_network_peering" "aks_to_hub_prod" {
-  provider                     = azurerm.production
-  name                         = "peer-aks-hub-prod-swe"
-  resource_group_name          = lookup(var.resource_group_names, "rg-netaks-prod-swe", "rg-netaks-prod-swe")
-  virtual_network_name         = azurerm_virtual_network.prod["aks_prod"].name
-  remote_virtual_network_id    = azurerm_virtual_network.hub_prod["hub_prod"].id
+  provider                  = azurerm.production
+  name                      = "peer-aks-hub-prod-swe"
+  resource_group_name       = lookup(var.resource_group_names, "rg-netaks-prod-swe", "rg-netaks-prod-swe")
+  virtual_network_name      = azurerm_virtual_network.prod["aks_prod"].name
+  remote_virtual_network_id = azurerm_virtual_network.hub_prod["hub_prod"].id
 
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
@@ -611,11 +611,11 @@ resource "azurerm_virtual_network_peering" "aks_to_hub_prod" {
 # 2. PEERING: APPS SPOKE -> HUB PROD
 # -------------------------------------------------------------------------
 resource "azurerm_virtual_network_peering" "apps_to_hub_prod" {
-  provider                     = azurerm.production
-  name                         = "peer-apps-hub-prod-swe"
-  resource_group_name          = lookup(var.resource_group_names, "rg-netapps-prod-swe", "rg-netapps-prod-swe")
-  virtual_network_name         = azurerm_virtual_network.prod["apps_prod"].name
-  remote_virtual_network_id    = azurerm_virtual_network.hub_prod["hub_prod"].id
+  provider                  = azurerm.production
+  name                      = "peer-apps-hub-prod-swe"
+  resource_group_name       = lookup(var.resource_group_names, "rg-netapps-prod-swe", "rg-netapps-prod-swe")
+  virtual_network_name      = azurerm_virtual_network.prod["apps_prod"].name
+  remote_virtual_network_id = azurerm_virtual_network.hub_prod["hub_prod"].id
 
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
