@@ -47,7 +47,7 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
   ]
 
   disable_password_authentication = false
-  admin_password                   = var.admin_password
+  admin_password                  = var.admin_password
 
 
   os_disk {
@@ -81,11 +81,11 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "jumpbox" {
   count = var.enable_auto_shutdown ? 1 : 0
 
   virtual_machine_id = azurerm_linux_virtual_machine.jumpbox.id
-  location            = var.location
-  enabled             = true
+  location           = var.location
+  enabled            = true
 
   daily_recurrence_time = var.auto_shutdown_time
-  timezone               = var.auto_shutdown_timezone
+  timezone              = var.auto_shutdown_timezone
 
   notification_settings {
     enabled         = true

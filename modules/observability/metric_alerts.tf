@@ -11,7 +11,7 @@
 # A. Throughput / Utilización de Ancho de Banda > 80% (Capacidad)
 resource "azurerm_monitor_metric_alert" "firewall_throughput" {
   #count               = var.diagnostic_target_resources.firewall_id != null ? 1 : 0
-  count = var.enabled_features.firewall ? 1 : 0
+  count               = var.enabled_features.firewall ? 1 : 0
   name                = "alert-afw-throughput-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   scopes              = [var.diagnostic_target_resources.firewall_id]
@@ -37,7 +37,7 @@ resource "azurerm_monitor_metric_alert" "firewall_throughput" {
 # B. Agotamiento de puertos SNAT (SNAT Port Utilization > 80%)
 resource "azurerm_monitor_metric_alert" "firewall_snat" {
   #count               = var.diagnostic_target_resources.firewall_id != null ? 1 : 0
-  count = var.enabled_features.firewall ? 1 : 0
+  count               = var.enabled_features.firewall ? 1 : 0
   name                = "alert-afw-snat-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   scopes              = [var.diagnostic_target_resources.firewall_id]
@@ -66,7 +66,7 @@ resource "azurerm_monitor_metric_alert" "firewall_snat" {
 # A. Peticiones Fallidas (Failed Requests / 5xx > 10)
 resource "azurerm_monitor_metric_alert" "appgw_failed_requests" {
   #count               = var.diagnostic_target_resources.application_gateway_id != null ? 1 : 0
-  count = var.enabled_features.application_gateway ? 1 : 0
+  count               = var.enabled_features.application_gateway ? 1 : 0
   name                = "alert-agw-failedreq-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   scopes              = [var.diagnostic_target_resources.application_gateway_id]
@@ -92,7 +92,7 @@ resource "azurerm_monitor_metric_alert" "appgw_failed_requests" {
 # B. Latencia de Respuesta (Total Time > 3 segundos)
 resource "azurerm_monitor_metric_alert" "appgw_latency" {
   #count               = var.diagnostic_target_resources.application_gateway_id != null ? 1 : 0
-  count = var.enabled_features.application_gateway ? 1 : 0
+  count               = var.enabled_features.application_gateway ? 1 : 0
   name                = "alert-agw-latency-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   scopes              = [var.diagnostic_target_resources.application_gateway_id]
@@ -121,7 +121,7 @@ resource "azurerm_monitor_metric_alert" "appgw_latency" {
 # A. Ancho de banda de túnel saturado (Bandwidth > 80%)
 resource "azurerm_monitor_metric_alert" "vpngw_bandwidth" {
   #count               = var.diagnostic_target_resources.vpn_gateway_id != null ? 1 : 0
-  count = var.enabled_features.vpn_gateway ? 1 : 0
+  count               = var.enabled_features.vpn_gateway ? 1 : 0
   name                = "alert-vpngw-bandwidth-prod-${local.region_suffix}"
   resource_group_name = local.monitoring_rg_name
   scopes              = [var.diagnostic_target_resources.vpn_gateway_id]

@@ -14,7 +14,7 @@ resource "azurerm_private_dns_resolver" "hub_dns_resolver" {
   location            = var.location
   resource_group_name = lookup(var.resource_group_names, "rg-dns-prod-swe", "rg-dns-prod-swe")
   virtual_network_id  = azurerm_virtual_network.hub_prod["hub_prod"].id
-  tags = local.platform_tags
+  tags                = local.platform_tags
 }
 
 resource "azurerm_private_dns_resolver_inbound_endpoint" "hub_dns_inbound" {
@@ -35,7 +35,7 @@ resource "azurerm_private_dns_resolver_outbound_endpoint" "hub_dns_outbound" {
   private_dns_resolver_id = azurerm_private_dns_resolver.hub_dns_resolver.id
   location                = var.location
   subnet_id               = azurerm_subnet.hub_prod["hub_prod_snet-hub-dnsout-prod-swe"].id
-  tags = local.platform_tags
+  tags                    = local.platform_tags
 }
 
 # -------------------------------------------------------------------------
@@ -79,7 +79,7 @@ resource "azurerm_private_dns_zone" "dns_zones" {
   for_each            = local.private_dns_zones
   name                = each.value
   resource_group_name = lookup(var.resource_group_names, "rg-dns-prod-swe", "rg-dns-prod-swe")
-  tags = local.platform_tags
+  tags                = local.platform_tags
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "dns_links" {
@@ -90,5 +90,5 @@ resource "azurerm_private_dns_zone_virtual_network_link" "dns_links" {
   private_dns_zone_name = azurerm_private_dns_zone.dns_zones[each.value.zone].name
   virtual_network_id    = each.value.vnet_key == "hub_prod" ? azurerm_virtual_network.hub_prod["hub_prod"].id : (each.value.vnet_key == "dataai_prod" ? azurerm_virtual_network.data_prod["dataai_prod"].id : (each.value.vnet_key == "shared_prod" ? azurerm_virtual_network.shared_prod["shared_prod"].id : azurerm_virtual_network.prod[each.value.vnet_key].id))
   registration_enabled  = false
-  tags = local.platform_tags
+  tags                  = local.platform_tags
 }

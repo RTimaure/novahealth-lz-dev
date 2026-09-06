@@ -17,7 +17,7 @@ locals {
 variable "resource_group_name" {
   description = "Nombre del Resource Group destino (ej. rg-mgmtvm-prod-swe)"
   type        = string
-  default = null
+  default     = null
 }
 
 variable "subnet_id" {

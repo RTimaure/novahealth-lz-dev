@@ -5,9 +5,9 @@ output "vnets" {
   description = "Mapa de todos los IDs de las VNets desplegadas."
   value = merge(
     { for k, v in azurerm_virtual_network.hub_prod : k => v.id },
-   // { for k, v in azurerm_virtual_network.hub_nprod : k => v.id },
+    // { for k, v in azurerm_virtual_network.hub_nprod : k => v.id },
     { for k, v in azurerm_virtual_network.data_prod : k => v.id },
-  //  { for k, v in azurerm_virtual_network.data_nprod : k => v.id },
+    //  { for k, v in azurerm_virtual_network.data_nprod : k => v.id },
     { for k, v in azurerm_virtual_network.prod : k => v.id }
   )
 }
@@ -18,7 +18,7 @@ output "subnets" {
     { for k, v in azurerm_subnet.hub_prod : k => v.id },
     // { for k, v in azurerm_subnet.hub_nprod : k => v.id },
     { for k, v in azurerm_subnet.data_prod : k => v.id },
-   // { for k, v in azurerm_subnet.data_nprod : k => v.id },
+    // { for k, v in azurerm_subnet.data_nprod : k => v.id },
     { for k, v in azurerm_subnet.prod : k => v.id },
     { for k, v in azurerm_subnet.shared_prod : k => v.id } # <-- Agregar esta línea
   )
@@ -39,9 +39,9 @@ output "nsgs" {
   description = "Mapa de todos los NSGs desplegados."
   value = merge(
     azurerm_network_security_group.hub_nsgs_prod,
-   // azurerm_network_security_group.hub_nsgs_nprod,
+    // azurerm_network_security_group.hub_nsgs_nprod,
     azurerm_network_security_group.data_nsgs_prod,
-   // azurerm_network_security_group.data_nsgs_nprod,
+    // azurerm_network_security_group.data_nsgs_nprod,
     azurerm_network_security_group.prod_nsgs,
     azurerm_network_security_group.shared_nsgs_prod
   )
@@ -51,16 +51,16 @@ output "nsgs" {
 output "route_tables" {
   description = "Mapa de todas las Tablas de Rutas (Route Tables) desplegadas."
   value = {
-    hub_mngt_prod  = azurerm_route_table.hub_mngt_prod.id
-  //  hub_mngt_nprod = azurerm_route_table.hub_mngt_nprod.id
-    aks_prod       = azurerm_route_table.aks_prod.id
-  //  aks_nprod      = azurerm_route_table.aks_nprod.id
-    data_prod      = azurerm_route_table.data_prod.id
-  //  data_nprod     = azurerm_route_table.data_nprod.id
-    apps_prod      = azurerm_route_table.apps_prod.id
-   // apps_nprod     = azurerm_route_table.apps_nprod.id
-    shared_prod    = azurerm_route_table.shared_prod.id
-   // shared_nprod   = azurerm_route_table.shared_nprod.id
+    hub_mngt_prod = azurerm_route_table.hub_mngt_prod.id
+    //  hub_mngt_nprod = azurerm_route_table.hub_mngt_nprod.id
+    aks_prod = azurerm_route_table.aks_prod.id
+    //  aks_nprod      = azurerm_route_table.aks_nprod.id
+    data_prod = azurerm_route_table.data_prod.id
+    //  data_nprod     = azurerm_route_table.data_nprod.id
+    apps_prod = azurerm_route_table.apps_prod.id
+    // apps_nprod     = azurerm_route_table.apps_nprod.id
+    shared_prod = azurerm_route_table.shared_prod.id
+    // shared_nprod   = azurerm_route_table.shared_nprod.id
   }
 }
 
@@ -68,12 +68,12 @@ output "vnet_peerings" {
   description = "Mapa de todos los IDs de los VNet Peerings."
   value = merge(
     { for k, v in azurerm_virtual_network_peering.hub_to_prod_prod : k => v.id },
-   // { for k, v in azurerm_virtual_network_peering.hub_to_prod_nprod : k => v.id },
-   // { for k, v in azurerm_virtual_network_peering.prod_to_hub : k => v.id },
+    // { for k, v in azurerm_virtual_network_peering.hub_to_prod_nprod : k => v.id },
+    // { for k, v in azurerm_virtual_network_peering.prod_to_hub : k => v.id },
     { for k, v in azurerm_virtual_network_peering.hub_to_data_prod : k => v.id },
-   // { for k, v in azurerm_virtual_network_peering.hub_to_data_nprod : k => v.id },
+    // { for k, v in azurerm_virtual_network_peering.hub_to_data_nprod : k => v.id },
     { for k, v in azurerm_virtual_network_peering.data_to_hub_prod : k => v.id },
-   // { for k, v in azurerm_virtual_network_peering.data_to_hub_nprod : k => v.id },
+    // { for k, v in azurerm_virtual_network_peering.data_to_hub_nprod : k => v.id },
     { for k, v in azurerm_virtual_network_peering.hub_to_shared_prod : k => v.id },
     { for k, v in azurerm_virtual_network_peering.shared_to_hub_prod : k => v.id }
   )
