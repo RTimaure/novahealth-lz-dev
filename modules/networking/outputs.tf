@@ -19,7 +19,8 @@ output "subnets" {
     // { for k, v in azurerm_subnet.hub_nprod : k => v.id },
     { for k, v in azurerm_subnet.data_prod : k => v.id },
    // { for k, v in azurerm_subnet.data_nprod : k => v.id },
-    { for k, v in azurerm_subnet.prod : k => v.id }
+    { for k, v in azurerm_subnet.prod : k => v.id },
+    { for k, v in azurerm_subnet.shared_prod : k => v.id } # <-- Agregar esta línea
   )
 }
 /*
@@ -41,7 +42,8 @@ output "nsgs" {
    // azurerm_network_security_group.hub_nsgs_nprod,
     azurerm_network_security_group.data_nsgs_prod,
    // azurerm_network_security_group.data_nsgs_nprod,
-    azurerm_network_security_group.prod_nsgs
+    azurerm_network_security_group.prod_nsgs,
+    azurerm_network_security_group.shared_nsgs_prod
   )
 }
 

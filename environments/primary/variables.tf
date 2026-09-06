@@ -105,3 +105,38 @@ variable "cicd_service_principal_object_id" {
 	type        = string
 	default     = ""
 }
+
+#--------------------------------------------
+# Variables para el módulo de Jumpbox
+#--------------------------------------------
+variable "jumpbox_admin_username" {
+	description = "Usuario administrador de la jumpbox"
+	type        = string
+	default     = "nh-jumpbox-admin"
+}
+
+variable "jumpbox_admin_password" {
+	description = "Contraseña del usuario administrador de la jumpbox"
+	type        = string
+	sensitive   = true
+}
+
+#--------------------------------------------
+# Variables para el módulo de VM Tester
+#--------------------------------------------
+
+variable "test_vm_spoke" {
+  description = "Spoke destino de la VM de pruebas: aks | apps | dataai | shared"
+  type        = string
+
+  validation {
+    condition     = contains(["aks", "apps", "dataai", "shared"], var.test_vm_spoke)
+    error_message = "test_vm_spoke debe ser uno de: aks, apps, dataai, shared."
+  }
+}
+
+variable "test_vm_admin_password" {
+  description = "Contraseña del usuario administrador local de las VMs de prueba (sensible; no se abre el puerto 22 por red)."
+  type        = string
+  sensitive   = true
+}

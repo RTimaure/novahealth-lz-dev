@@ -47,3 +47,10 @@ output "application_insights_connection_string" {
 	sensitive = true
 }
 
+
+#------------------------------------------------------------------------
+# Outputs del módulo jumpbox
+#------------------------------------------------------------------------
+output "jumpbox_private_ip" {
+	value = module.jumpbox.private_ip_address
+}

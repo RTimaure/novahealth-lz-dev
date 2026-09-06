@@ -9,6 +9,7 @@ locals {
   # =========================================================================
   connectivity_rgs = {
     # Sweden Central (Primary) - 4 segmentos exactos
+    "rg-mgmtvm-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team", workload = "platformshared-services", crit = "Medium",   cc = "CC-004" }
     "rg-nethub-prod-swe"   = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  workload = "platformshared-services", crit = "Critical", cc = "CC-001" }
     "rg-firewall-prod-swe" = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-security-team", workload = "security-compliance",     crit = "Critical", cc = "CC-001" }
     "rg-vpngw-prod-swe"    = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-network-team",  workload = "platformshared-services", crit = "High",     cc = "CC-001" }
@@ -37,7 +38,7 @@ locals {
   # 3. SUSCRIPCIÓN: MANAGEMENT
   # =========================================================================
   management_rgs = {
-    "rg-mgmtvm-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team", workload = "platformshared-services", crit = "Medium",   cc = "CC-004" }
+    
     "rg-monitoring-prod-swe" = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team", workload = "platformshared-services", crit = "High",     cc = "CC-004" }
     "rg-automation-prod-swe" = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team", workload = "platformshared-services", crit = "High",     cc = "CC-004" }
     "rg-backup-prod-swe"     = { loc = var.primary_location, env = "prod", owner = "grp-novahealth-ops-team", workload = "platformshared-services", crit = "Critical", cc = "CC-004" }

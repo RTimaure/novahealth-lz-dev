@@ -75,7 +75,7 @@ module "networking" {
 	location             = var.location
 	target_subscriptions = local.target_subscriptions
 	resource_group_names = module.resource_groups.rg_names
-	resource_group_tags  = module.resource_groups.rg_tags
+	#resource_group_tags  = module.resource_groups.rg_tags
 
 	enable_global_peering = var.enable_global_peering
 	remote_hub_vnet_id    = var.remote_hub_vnet_id
@@ -99,7 +99,7 @@ module "finops" {
 	target_subscriptions = local.target_subscriptions
 	notification_emails   = ["finops@novahealth.com"]
 
-	depends_on = [module.networking]
+#	depends_on = [module.networking]
 }
 
 module "observability" {
@@ -107,7 +107,7 @@ module "observability" {
 
 	location             = var.location
 	resource_group_names = module.resource_groups.rg_names
-	resource_group_tags  = module.resource_groups.rg_tags
+	#resource_group_tags  = module.resource_groups.rg_tags
 	tags                 = var.tags
 	notification_email   = "ops-alerts@novahealth.com"
 
@@ -134,6 +134,7 @@ module "observability" {
 
 	depends_on = [module.resource_groups, module.networking]
 }
+
 
 #------------------------------------------------------------------------
 # JUMPBOX (VM para el acceso seguro via bastion a la red corporativa)
@@ -229,3 +230,4 @@ module "test_vm" {
 
   depends_on = [module.networking]
 }
+

@@ -19,7 +19,7 @@ resource "azurerm_monitor_metric_alert" "firewall_throughput" {
   severity            = 2
   frequency           = "PT5M"
   window_size         = "PT5M"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   criteria {
     metric_namespace = "Microsoft.Network/azureFirewalls"
@@ -45,7 +45,7 @@ resource "azurerm_monitor_metric_alert" "firewall_snat" {
   severity            = 1
   frequency           = "PT1M"
   window_size         = "PT5M"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   criteria {
     metric_namespace = "Microsoft.Network/azureFirewalls"
@@ -74,7 +74,7 @@ resource "azurerm_monitor_metric_alert" "appgw_failed_requests" {
   severity            = 1
   frequency           = "PT1M"
   window_size         = "PT5M"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   criteria {
     metric_namespace = "Microsoft.Network/applicationGateways"
@@ -100,7 +100,7 @@ resource "azurerm_monitor_metric_alert" "appgw_latency" {
   severity            = 2
   frequency           = "PT5M"
   window_size         = "PT5M"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   criteria {
     metric_namespace = "Microsoft.Network/applicationGateways"
@@ -129,7 +129,7 @@ resource "azurerm_monitor_metric_alert" "vpngw_bandwidth" {
   severity            = 2
   frequency           = "PT5M"
   window_size         = "PT5M"
-  tags                = local.observability_tags
+  tags                = local.management_tags
 
   criteria {
     metric_namespace = "Microsoft.Network/virtualNetworkGateways"
