@@ -33,7 +33,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: [primary, dr]
+        environment: [primary]
+        # environment: [primary, dr] # Habilitar cuando DR esté configurado
     defaults:
       run:
         working-directory: environments/${{ matrix.environment }}
@@ -62,6 +63,13 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # --- PASO INYECTOR DE VARIABLES ---
+      - name: Generate tfvars file
+        run: |
+          if [ "${{ matrix.environment }}" = "primary" ]; then
+            echo "${{ secrets.TFVARS_PRIMARY }}" > primary.tfvars
+          fi
+
       - name: terraform plan
         id: plan
         run: |
@@ -73,6 +81,12 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      # --- LIMPIEZA AUTOMÁTICA DEL ARCHIVO TEMPORAL ---
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f *.tfvars
 
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
