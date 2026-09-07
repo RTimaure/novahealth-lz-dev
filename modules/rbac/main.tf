@@ -145,18 +145,18 @@ locals {
       { key = "prod_dev", sub = var.target_subscriptions["production"], role = "Reader", group = "grp-novahealth-dev-team" },
       { key = "prod_sre", sub = var.target_subscriptions["production"], role = "Monitoring Contributor", group = "grp-novahealth-sre-team" }
     ] : [],
-    
+
     contains(keys(var.target_subscriptions), "data_ai") ? [
       { key = "data_ai_clinical", sub = var.target_subscriptions["data_ai"], role = "Contributor", group = "grp-novahealth-clinical-ai-team" }
     ] : [],
-    
+
     contains(keys(var.target_subscriptions), "qa") ? [
-      { key = "qa_qa",  sub = var.target_subscriptions["qa"], role = "Contributor", group = "grp-novahealth-qa-team" },
+      { key = "qa_qa", sub = var.target_subscriptions["qa"], role = "Contributor", group = "grp-novahealth-qa-team" },
       { key = "qa_dev", sub = var.target_subscriptions["qa"], role = "Reader", group = "grp-novahealth-dev-team" }
     ] : [],
-    
+
     contains(keys(var.target_subscriptions), "development") ? [
-      { key = "dev_dev",  sub = var.target_subscriptions["development"], role = "Contributor", group = "grp-novahealth-dev-team" },
+      { key = "dev_dev", sub = var.target_subscriptions["development"], role = "Contributor", group = "grp-novahealth-dev-team" },
       { key = "dev_lead", sub = var.target_subscriptions["development"], role = "Cost Management Contributor", group = "grp-novahealth-dev-lead" }
     ] : []
   ])
@@ -170,7 +170,7 @@ resource "azurerm_role_assignment" "sub_rbac" {
   scope                = startswith(each.value.sub, "/subscriptions/") ? each.value.sub : "/subscriptions/${each.value.sub}"
   role_definition_name = each.value.role
   principal_id         = azuread_group.novahealth_groups[each.value.group].object_id
-  
+
   depends_on = [azurerm_role_definition.custom_roles]
 }
 

@@ -20,8 +20,8 @@ variable "diagnostic_target_resources" {
 
 # 1. Azure Firewall Diagnostics
 resource "azurerm_monitor_diagnostic_setting" "firewall" {
- # count                      = var.diagnostic_target_resources.firewall_id != null ? 1 : 0
-  count = var.enabled_features.firewall ? 1 : 0
+  # count                      = var.diagnostic_target_resources.firewall_id != null ? 1 : 0
+  count                      = var.enabled_features.firewall ? 1 : 0
   name                       = "diag-afw-prod-${local.region_suffix}"
   target_resource_id         = var.diagnostic_target_resources.firewall_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id
@@ -39,7 +39,7 @@ resource "azurerm_monitor_diagnostic_setting" "firewall" {
 # 2. Application Gateway (WAF) Diagnostics
 resource "azurerm_monitor_diagnostic_setting" "appgw" {
   #count                      = var.diagnostic_target_resources.application_gateway_id != null ? 1 : 0
-  count = var.enabled_features.application_gateway ? 1 : 0
+  count                      = var.enabled_features.application_gateway ? 1 : 0
   name                       = "diag-agw-prod-${local.region_suffix}"
   target_resource_id         = var.diagnostic_target_resources.application_gateway_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id
@@ -57,7 +57,7 @@ resource "azurerm_monitor_diagnostic_setting" "appgw" {
 # 3. VPN Gateway Diagnostics
 resource "azurerm_monitor_diagnostic_setting" "vpngw" {
   #count                      = var.diagnostic_target_resources.vpn_gateway_id != null ? 1 : 0
-  count = var.enabled_features.vpn_gateway ? 1 : 0
+  count                      = var.enabled_features.vpn_gateway ? 1 : 0
   name                       = "diag-vpngw-prod-${local.region_suffix}"
   target_resource_id         = var.diagnostic_target_resources.vpn_gateway_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id
@@ -75,7 +75,7 @@ resource "azurerm_monitor_diagnostic_setting" "vpngw" {
 # 4. Azure Bastion Diagnostics
 resource "azurerm_monitor_diagnostic_setting" "bastion" {
   #count                      = var.diagnostic_target_resources.bastion_id != null ? 1 : 0
-  count = var.enabled_features.bastion ? 1 : 0
+  count                      = var.enabled_features.bastion ? 1 : 0
   name                       = "diag-bastion-prod-${local.region_suffix}"
   target_resource_id         = var.diagnostic_target_resources.bastion_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id
@@ -93,7 +93,7 @@ resource "azurerm_monitor_diagnostic_setting" "bastion" {
 # 5. Private DNS Resolver Diagnostics
 resource "azurerm_monitor_diagnostic_setting" "dns_resolver" {
   #count                      = var.diagnostic_target_resources.dns_resolver_id != null ? 1 : 0
-  count = var.enabled_features.dns_resolver ? 1 : 0
+  count                      = var.enabled_features.dns_resolver ? 1 : 0
   name                       = "diag-dnspr-prod-${local.region_suffix}"
   target_resource_id         = var.diagnostic_target_resources.dns_resolver_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.central.id

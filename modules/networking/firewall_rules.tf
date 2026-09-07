@@ -127,17 +127,17 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
     action   = "Allow"
 
     rule {
-      name                  = "Allow-OnPrem-to-LZ-Resources"
-      protocols             = ["TCP", "UDP", "ICMP"]
-      source_addresses      = ["172.16.0.0/16"]
+      name             = "Allow-OnPrem-to-LZ-Resources"
+      protocols        = ["TCP", "UDP", "ICMP"]
+      source_addresses = ["172.16.0.0/16"]
       destination_addresses = [
-        "10.0.0.0/22",   # Hub
-        "10.0.4.0/22",   # AKS Spoke
-        "10.0.8.0/23",   # Data & AI Spoke
-        "10.0.10.0/24",  # Apps Spoke
-        "10.0.11.0/24"   # Shared Services Spoke
+        "10.0.0.0/22",  # Hub
+        "10.0.4.0/22",  # AKS Spoke
+        "10.0.8.0/23",  # Data & AI Spoke
+        "10.0.10.0/24", # Apps Spoke
+        "10.0.11.0/24"  # Shared Services Spoke
       ]
-      destination_ports     = ["*"]
+      destination_ports = ["*"]
     }
   }
 
@@ -152,14 +152,14 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
     action   = "Allow"
 
     rule {
-      name                  = "Allow-Spokes-and-Mngt-to-DNSResolverInbound"
-      protocols             = ["UDP", "TCP"]
-      source_addresses      = [
-        "10.0.0.0/24",   # Hub Management (Hopping Host)
-        "10.0.4.0/22",   # AKS Spoke
-        "10.0.8.0/23",   # Data & AI Spoke
-        "10.0.10.0/24",  # Apps Spoke
-        "10.0.11.0/24"   # Shared Services Spoke
+      name      = "Allow-Spokes-and-Mngt-to-DNSResolverInbound"
+      protocols = ["UDP", "TCP"]
+      source_addresses = [
+        "10.0.0.0/24",  # Hub Management (Hopping Host)
+        "10.0.4.0/22",  # AKS Spoke
+        "10.0.8.0/23",  # Data & AI Spoke
+        "10.0.10.0/24", # Apps Spoke
+        "10.0.11.0/24"  # Shared Services Spoke
       ]
       destination_addresses = ["10.0.3.0/27"]
       destination_ports     = ["53"]
@@ -179,7 +179,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-SharedPE-HTTPS"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"] # Workloads & System
-      destination_addresses = ["10.0.11.0/25"]                # snet-shared-pe-prod-swe
+      destination_addresses = ["10.0.11.0/25"]               # snet-shared-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -188,7 +188,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-AppsPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"]
-      destination_addresses = ["10.0.10.192/26"]              # snet-apps-pe-prod-swe
+      destination_addresses = ["10.0.10.192/26"] # snet-apps-pe-prod-swe
       destination_ports     = ["443", "1433", "5671"]
     }
 
@@ -197,7 +197,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-AKS-to-DataAIPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.4.0/23", "10.0.6.0/24"]
-      destination_addresses = ["10.0.8.0/25"]                 # snet-dataai-pe-prod-swe
+      destination_addresses = ["10.0.8.0/25"] # snet-dataai-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -206,7 +206,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-Apps-to-SharedPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.10.0/25", "10.0.10.128/26"] # ACA & Messaging
-      destination_addresses = ["10.0.11.0/25"]                    # snet-shared-pe-prod-swe
+      destination_addresses = ["10.0.11.0/25"]                   # snet-shared-pe-prod-swe
       destination_ports     = ["443"]
     }
 
@@ -215,15 +215,15 @@ resource "azurerm_firewall_policy_rule_collection_group" "network_rules" {
       name                  = "Allow-Apps-to-AppsPE"
       protocols             = ["TCP"]
       source_addresses      = ["10.0.10.0/25", "10.0.10.128/26"]
-      destination_addresses = ["10.0.10.192/26"]                  # snet-apps-pe-prod-swe
+      destination_addresses = ["10.0.10.192/26"] # snet-apps-pe-prod-swe
       destination_ports     = ["443", "1433", "5671"]
     }
 
     # Spoke: Data-IA -> Data-IA PE (Storage Account, AI Search, OpenAI, Redis)
     rule {
-      name                  = "Allow-DataIA-to-DataAIPE"
-      protocols             = ["TCP"]
-      source_addresses      = [
+      name      = "Allow-DataIA-to-DataAIPE"
+      protocols = ["TCP"]
+      source_addresses = [
         "10.0.8.128/25", # snet-dataai-analytics-prod-swe
         "10.0.9.0/25",   # snet-dataai-compute-prod-swe
         "10.0.9.128/26"  # snet-dataai-streaming-prod-swe
@@ -299,12 +299,12 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         port = 80
       }
       source_addresses = [
-        "10.0.0.0/24",    # snet-hub-mngt-prod-swe (Hopping Host)
-        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
-        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
-        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps / Functions)
-        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
+        "10.0.0.0/24",   # snet-hub-mngt-prod-swe (Hopping Host)
+        "10.0.4.0/23",   # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",   # snet-aks-system-prod-swe (AKS System)
+        "10.0.10.0/25",  # snet-apps-aca-prod-swe (ACA Apps / Functions)
+        "10.0.9.0/25",   # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27" # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
       ]
       destination_fqdns = [
         "github.com",
@@ -327,11 +327,11 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         port = 80
       }
       source_addresses = [
-        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
-        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
-        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps)
-        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
+        "10.0.4.0/23",   # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",   # snet-aks-system-prod-swe (AKS System)
+        "10.0.10.0/25",  # snet-apps-aca-prod-swe (ACA Apps)
+        "10.0.9.0/25",   # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27" # snet-shared-devops-prod-swe (DevOps Tools CI/CD)
       ]
       destination_fqdns = [
         "*.azurecr.io",
@@ -355,14 +355,14 @@ resource "azurerm_firewall_policy_rule_collection_group" "application_rules" {
         port = 80
       }
       source_addresses = [
-        "10.0.0.0/24",    # snet-hub-mngt-prod-swe (Hopping Host)
-        "10.0.4.0/23",    # snet-aks-workload-prod-swe (AKS Workloads)
-        "10.0.6.0/24",    # snet-aks-system-prod-swe (AKS System)
-        "10.0.7.128/27",  # snet-aks-monitoring-prod-swe (AKS Monitoring)
-        "10.0.10.0/25",   # snet-apps-aca-prod-swe (ACA Apps)
-        "10.0.8.128/25",  # snet-dataai-analytics-prod-swe (Data Analytics)
-        "10.0.9.0/25",    # snet-dataai-compute-prod-swe (ACA Data/AI)
-        "10.0.11.192/27"  # snet-shared-devops-prod-swe (DevOps Tools)
+        "10.0.0.0/24",   # snet-hub-mngt-prod-swe (Hopping Host)
+        "10.0.4.0/23",   # snet-aks-workload-prod-swe (AKS Workloads)
+        "10.0.6.0/24",   # snet-aks-system-prod-swe (AKS System)
+        "10.0.7.128/27", # snet-aks-monitoring-prod-swe (AKS Monitoring)
+        "10.0.10.0/25",  # snet-apps-aca-prod-swe (ACA Apps)
+        "10.0.8.128/25", # snet-dataai-analytics-prod-swe (Data Analytics)
+        "10.0.9.0/25",   # snet-dataai-compute-prod-swe (ACA Data/AI)
+        "10.0.11.192/27" # snet-shared-devops-prod-swe (DevOps Tools)
       ]
       destination_fqdns = [
         "*.ubuntu.com",
