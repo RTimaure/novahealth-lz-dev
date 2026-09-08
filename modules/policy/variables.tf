@@ -100,6 +100,7 @@ variable "allowed_resource_types" {
     "Microsoft.Consumption/budgets",
     "Microsoft.Authorization/policyAssignments",
     "Microsoft.Authorization/roleAssignments",
-    "Microsoft.Authorization/locks"
+    "Microsoft.Authorization/locks",
+    "Microsoft.DevTestLab/schedules"
   ]
 }
