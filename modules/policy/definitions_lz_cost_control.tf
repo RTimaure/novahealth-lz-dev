@@ -56,10 +56,12 @@ locals {
               not = {
                 field = "Microsoft.Compute/virtualMachines/sku.name"
                 in = [
-                  "Standard_D2s_v5",
-                  "Standard_D4s_v5",
-                  "Standard_B2s_v2",
-                  "Standard_B4s_v2"
+                  "Standard_B2pls_v2"
+                  "Standard_B2ps_v2"
+                  "Standard_B4pls_v2"
+                  "Standard_B4ps_v2"
+                  "Standard_D2ds_v6"
+                  "Standard_D4s_v6"  
                 ]
               }
             }

@@ -217,7 +217,7 @@ resource "azurerm_subnet_network_security_group_association" "hub_prod" {
 # DOMINIO DATA & IA — PROD (SUSCRIPCIÓN: DATA AND IA PLATFORM)
 # =========================================================================
 resource "azurerm_virtual_network" "data_prod" {
-  provider            = azurerm.data_ai
+  provider            = azurerm.platform_services
   for_each            = local.data_vnets_prod
   name                = each.value.name
   location            = var.location
@@ -232,7 +232,7 @@ resource "azurerm_virtual_network" "data_prod" {
 }
 
 resource "azurerm_subnet" "data_prod" {
-  provider             = azurerm.data_ai
+  provider             = azurerm.platform_services
   for_each             = local.data_subnets_prod
   name                 = each.value.subnet_name
   resource_group_name  = each.value.rg_name
@@ -241,7 +241,7 @@ resource "azurerm_subnet" "data_prod" {
 }
 
 resource "azurerm_network_security_group" "data_nsgs_prod" {
-  provider            = azurerm.data_ai
+  provider            = azurerm.platform_services
   for_each            = local.data_subnets_prod
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
@@ -255,19 +255,19 @@ resource "azurerm_network_security_group" "data_nsgs_prod" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "data_prod" {
-  provider                  = azurerm.data_ai
+  provider                  = azurerm.platform_services
   for_each                  = local.data_subnets_prod
   subnet_id                 = azurerm_subnet.data_prod[each.key].id
   network_security_group_id = azurerm_network_security_group.data_nsgs_prod[each.key].id
 
-  depends_on = [azurerm_network_security_rule.data_ai_rules_prod]
+  depends_on = [azurerm_network_security_rule.platform_services_rules_prod]
 }
 
 # =========================================================================
 # DOMINIO SHARED SERVICES — PROD (SUSCRIPCIÓN: PLATFORM SERVICES / DATA_AI)
 # =========================================================================
 resource "azurerm_virtual_network" "shared_prod" {
-  provider            = azurerm.data_ai
+  provider            = azurerm.platform_services
   for_each            = local.shared_vnets_prod
   name                = each.value.name
   location            = var.location
@@ -282,7 +282,7 @@ resource "azurerm_virtual_network" "shared_prod" {
 }
 
 resource "azurerm_subnet" "shared_prod" {
-  provider             = azurerm.data_ai
+  provider             = azurerm.platform_services
   for_each             = local.shared_subnets_prod
   name                 = each.value.subnet_name
   resource_group_name  = each.value.rg_name
@@ -291,7 +291,7 @@ resource "azurerm_subnet" "shared_prod" {
 }
 
 resource "azurerm_network_security_group" "shared_nsgs_prod" {
-  provider            = azurerm.data_ai
+  provider            = azurerm.platform_services
   for_each            = local.shared_subnets_prod
   name                = replace(each.value.subnet_name, "snet-", "nsg-")
   location            = var.location
@@ -305,7 +305,7 @@ resource "azurerm_network_security_group" "shared_nsgs_prod" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "shared_prod" {
-  provider                  = azurerm.data_ai
+  provider                  = azurerm.platform_services
   for_each                  = local.shared_subnets_prod
   subnet_id                 = azurerm_subnet.shared_prod[each.key].id
   network_security_group_id = azurerm_network_security_group.shared_nsgs_prod[each.key].id
@@ -395,7 +395,7 @@ resource "azurerm_virtual_network_peering" "hub_to_data_prod" {
 }
 
 resource "azurerm_virtual_network_peering" "data_to_hub_prod" {
-  provider                     = azurerm.data_ai
+  provider                     = azurerm.platform_services
   for_each                     = local.data_vnets_prod
   name                         = "peer-dataai-hub-prod-swe"
   resource_group_name          = each.value.rg_name
@@ -423,7 +423,7 @@ resource "azurerm_virtual_network_peering" "hub_to_shared_prod" {
 }
 
 resource "azurerm_virtual_network_peering" "shared_to_hub_prod" {
-  provider                     = azurerm.data_ai
+  provider                     = azurerm.platform_services
   for_each                     = local.shared_vnets_prod
   name                         = "peer-shared-hub-prod-swe"
   resource_group_name          = each.value.rg_name

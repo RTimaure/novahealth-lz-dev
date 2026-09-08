@@ -166,8 +166,8 @@ resource "azurerm_resource_group" "production" {
   }
 }
 
-resource "azurerm_resource_group" "data_ai" {
-  provider = azurerm.data_ai
+resource "azurerm_resource_group" "platform_services" {
+  provider = azurerm.platform_services
   for_each = { for k, v in local.dataia_rgs : k => v if v.loc == local.selected_location }
   name     = each.key
   location = each.value.loc

@@ -4,7 +4,7 @@ locals {
     identity     = var.identity_subscription_id
     management   = var.management_subscription_id
     production   = var.production_subscription_id
-    data_ai      = var.data_ai_subscription_id
+    platform_services      = var.platform_services_subscription_id
   }
 }
 
@@ -20,7 +20,7 @@ module "resource_groups" {
     azurerm.identity     = azurerm.identity
     azurerm.management   = azurerm.management
     azurerm.production   = azurerm.production
-    azurerm.data_ai      = azurerm.data_ai
+    azurerm.platform_services      = azurerm.platform_services
   }
 }
 
@@ -40,7 +40,7 @@ module "networking" {
     azurerm.identity     = azurerm.identity
     azurerm.management   = azurerm.management
     azurerm.production   = azurerm.production
-    azurerm.data_ai      = azurerm.data_ai
+    azurerm.platform_services      = azurerm.platform_services
   }
 
   depends_on = [module.resource_groups]

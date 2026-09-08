@@ -5,7 +5,7 @@ locals {
     identity     = var.identity_subscription_id
     management   = var.management_subscription_id
     production   = var.production_subscription_id
-    data_ai      = var.data_ai_subscription_id
+    platform_services      = var.platform_services_subscription_id
   }
 
   root_mg_id     = lookup(module.management_groups.management_group_ids, "root", "nh-root")
@@ -40,7 +40,7 @@ module "resource_groups" {
     azurerm.identity     = azurerm.identity
     azurerm.management   = azurerm.management
     azurerm.production   = azurerm.production
-    azurerm.data_ai      = azurerm.data_ai
+    azurerm.platform_services      = azurerm.platform_services
   }
 
   depends_on = [module.subscriptions]
@@ -86,7 +86,7 @@ module "networking" {
     azurerm.identity     = azurerm.identity
     azurerm.management   = azurerm.management
     azurerm.production   = azurerm.production
-    azurerm.data_ai      = azurerm.data_ai
+    azurerm.platform_services      = azurerm.platform_services
   }
 
   depends_on = [module.resource_groups]
@@ -185,13 +185,13 @@ locals {
       subnet_key   = "dataai_prod_snet-dataai-compute-prod-swe"
       rg_key       = "rg-dataai-prod-swe"
       nsg_key      = "dataai_prod_snet-dataai-compute-prod-swe"
-      provider_grp = "data_ai"
+      provider_grp = "platform_services"
     }
     shared = {
       subnet_key   = "shared_prod_snet-shared-devops-prod-swe"
-      rg_key       = "rg-shared-prod-swe"
+      rg_key       = "rg-sharedservices-prod-swe"
       nsg_key      = "shared_prod_snet-shared-devops-prod-swe"
-      provider_grp = "data_ai"
+      provider_grp = "platform_services"
     }
   }
 
@@ -213,7 +213,7 @@ module "test_vm" {
   source = "../../modules/test_vm"
 
   providers = {
-    azurerm.target = azurerm.production
+    azurerm.target = azurerm.platform_services
   }
 
   location                         = var.location

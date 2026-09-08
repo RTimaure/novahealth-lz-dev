@@ -236,7 +236,7 @@ resource "azurerm_route_table" "aks_nprod" {
 # 5. DATA & IA SPOKE - PROD (SUSCRIPCIÓN: DATA AND IA PLATFORM)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "data_prod" {
-  provider                      = azurerm.data_ai
+  provider                      = azurerm.platform_services
   name                          = "rt-dataai-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netdataai-prod-swe", "rg-netdataai-prod-swe")
@@ -280,7 +280,7 @@ resource "azurerm_route_table" "data_prod" {
 }
 
 resource "azurerm_subnet_route_table_association" "data_prod" {
-  provider = azurerm.data_ai
+  provider = azurerm.platform_services
   for_each = toset([
     "dataai_prod_snet-dataai-analytics-prod-swe",
     "dataai_prod_snet-dataai-compute-prod-swe",
@@ -470,7 +470,7 @@ resource "azurerm_subnet_route_table_association" "apps_nprod" {
 # 9. SHARED SERVICES SPOKE - PROD (SUSCRIPCIÓN: DATA_AI)
 # -------------------------------------------------------------------------
 resource "azurerm_route_table" "shared_prod" {
-  provider                      = azurerm.data_ai
+  provider                      = azurerm.platform_services
   name                          = "rt-shared-prod-swe"
   location                      = var.location
   resource_group_name           = lookup(var.resource_group_names, "rg-netshared-prod-swe", "rg-netshared-prod-swe")
@@ -514,7 +514,7 @@ resource "azurerm_route_table" "shared_prod" {
 }
 
 resource "azurerm_subnet_route_table_association" "shared_prod" {
-  provider = azurerm.data_ai
+  provider = azurerm.platform_services
   for_each = toset([
     "shared_prod_snet-shared-apim-prod-swe",
     "shared_prod_snet-shared-devops-prod-swe"

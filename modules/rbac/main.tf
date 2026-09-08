@@ -146,8 +146,8 @@ locals {
       { key = "prod_sre", sub = var.target_subscriptions["production"], role = "Monitoring Contributor", group = "grp-novahealth-sre-team" }
     ] : [],
 
-    contains(keys(var.target_subscriptions), "data_ai") ? [
-      { key = "data_ai_clinical", sub = var.target_subscriptions["data_ai"], role = "Contributor", group = "grp-novahealth-clinical-ai-team" }
+    contains(keys(var.target_subscriptions), "platform_services") ? [
+      { key = "platform_services_clinical", sub = var.target_subscriptions["platform_services"], role = "Contributor", group = "grp-novahealth-clinical-ai-team" }
     ] : [],
 
     contains(keys(var.target_subscriptions), "qa") ? [

@@ -52,8 +52,8 @@ variable "production_subscription_id" {
   type        = string
 }
 
-variable "data_ai_subscription_id" {
-  description = "Subscription ID de data_ai."
+variable "platform_services_subscription_id" {
+  description = "Subscription ID de platform_services."
   type        = string
 }
 

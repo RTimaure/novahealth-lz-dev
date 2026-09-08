@@ -33,7 +33,7 @@ locals {
   # -----------------------------------------------------------------------
   # 2. REGLAS DATA-IA (Solo Producción)
   # -----------------------------------------------------------------------
-  data_ai_nsg_rules_raw = flatten([
+  platform_services_nsg_rules_raw = flatten([
     [for r in [
       { name = "Allow-PE-Analytics-HTTPS", priority = 500, direction = "Inbound", source = "10.0.9.0/25", dest = "VirtualNetwork", port = "443", protocol = "Tcp", access = "Allow" },
       { name = "Allow-PE-Analytics-SQL", priority = 510, direction = "Inbound", source = "10.0.9.0/25", dest = "VirtualNetwork", port = "1433", protocol = "Tcp", access = "Allow" }
@@ -44,7 +44,7 @@ locals {
     ] : merge(r, { nsg_key = "dataai_prod_snet-dataai-compute-prod-swe" })]
   ])
 
-  data_ai_nsg_rules_prod = { for rule in local.data_ai_nsg_rules_raw : "${rule.nsg_key}_${rule.name}" => rule }
+  platform_services_nsg_rules_prod = { for rule in local.platform_services_nsg_rules_raw : "${rule.nsg_key}_${rule.name}" => rule }
 
   # -----------------------------------------------------------------------
   # 3. REGLAS AKS Y APPS (Solo Producción)
@@ -102,10 +102,10 @@ resource "azurerm_network_security_rule" "prod_rules" {
   resource_group_name         = azurerm_network_security_group.prod_nsgs[each.value.nsg_key].resource_group_name
   network_security_group_name = azurerm_network_security_group.prod_nsgs[each.value.nsg_key].name
 }
-resource "azurerm_network_security_rule" "data_ai_rules_prod" {
+resource "azurerm_network_security_rule" "platform_services_rules_prod" {
   # Reemplaza tu for_each actual por este filtro de seguridad:
   for_each = {
-    for key, val in local.data_ai_nsg_rules_prod : key => val
+    for key, val in local.platform_services_nsg_rules_prod : key => val
     if contains(keys(azurerm_network_security_group.prod_nsgs), val.nsg_key)
   }
 

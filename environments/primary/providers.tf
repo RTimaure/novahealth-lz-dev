@@ -76,8 +76,8 @@ provider "azurerm" {
 }
 
 provider "azurerm" {
-  alias                      = "data_ai"
-  subscription_id            = var.data_ai_subscription_id
+  alias                      = "platform_services"
+  subscription_id            = var.platform_services_subscription_id
   skip_provider_registration = true
   features {
     resource_group {

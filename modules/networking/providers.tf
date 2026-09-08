@@ -10,7 +10,7 @@ terraform {
         azurerm.identity,
         azurerm.management,
         azurerm.production,
-        azurerm.data_ai
+        azurerm.platform_services
       ]
     }
   }

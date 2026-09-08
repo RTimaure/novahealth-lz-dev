@@ -7,6 +7,6 @@ output "subscription_ids" {
     identity     = var.student_subscription_id
     management   = var.student_subscription_id
     production   = var.student_subscription_id
-    data_ai      = var.student_subscription_id
+    platform_services      = var.student_subscription_id
   }
 }

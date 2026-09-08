@@ -8,7 +8,7 @@ output "rg_ids" {
     { for k, v in azurerm_resource_group.identity : k => v.id },
     { for k, v in azurerm_resource_group.management : k => v.id },
     { for k, v in azurerm_resource_group.production : k => v.id },
-    { for k, v in azurerm_resource_group.data_ai : k => v.id }
+    { for k, v in azurerm_resource_group.platform_services : k => v.id }
   )
 }
 
@@ -19,7 +19,7 @@ output "rg_names" {
     { for k, v in azurerm_resource_group.identity : k => v.name },
     { for k, v in azurerm_resource_group.management : k => v.name },
     { for k, v in azurerm_resource_group.production : k => v.name },
-    { for k, v in azurerm_resource_group.data_ai : k => v.name }
+    { for k, v in azurerm_resource_group.platform_services : k => v.name }
   )
 }
 
@@ -30,6 +30,6 @@ output "rg_tags" {
     { for k, v in azurerm_resource_group.identity : k => v.tags },
     { for k, v in azurerm_resource_group.management : k => v.tags },
     { for k, v in azurerm_resource_group.production : k => v.tags },
-    { for k, v in azurerm_resource_group.data_ai : k => v.tags }
+    { for k, v in azurerm_resource_group.platform_services : k => v.tags }
   )
 }
