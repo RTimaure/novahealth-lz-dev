@@ -61,7 +61,7 @@ locals {
                   "Standard_B4pls_v2",
                   "Standard_B4ps_v2",
                   "Standard_D2ds_v6",
-                  "Standard_D4s_v6"  
+                  "Standard_D4s_v6"
                 ]
               }
             }

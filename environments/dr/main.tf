@@ -1,10 +1,10 @@
 locals {
   target_subscriptions = {
-    connectivity = var.connectivity_subscription_id
-    identity     = var.identity_subscription_id
-    management   = var.management_subscription_id
-    production   = var.production_subscription_id
-    platform_services      = var.platform_services_subscription_id
+    connectivity      = var.connectivity_subscription_id
+    identity          = var.identity_subscription_id
+    management        = var.management_subscription_id
+    production        = var.production_subscription_id
+    platform_services = var.platform_services_subscription_id
   }
 }
 
@@ -16,11 +16,11 @@ module "resource_groups" {
   deployment_scope = var.deployment_scope
 
   providers = {
-    azurerm.connectivity = azurerm.connectivity
-    azurerm.identity     = azurerm.identity
-    azurerm.management   = azurerm.management
-    azurerm.production   = azurerm.production
-    azurerm.platform_services      = azurerm.platform_services
+    azurerm.connectivity      = azurerm.connectivity
+    azurerm.identity          = azurerm.identity
+    azurerm.management        = azurerm.management
+    azurerm.production        = azurerm.production
+    azurerm.platform_services = azurerm.platform_services
   }
 }
 
@@ -36,11 +36,11 @@ module "networking" {
   tags                  = var.tags
 
   providers = {
-    azurerm.connectivity = azurerm.connectivity
-    azurerm.identity     = azurerm.identity
-    azurerm.management   = azurerm.management
-    azurerm.production   = azurerm.production
-    azurerm.platform_services      = azurerm.platform_services
+    azurerm.connectivity      = azurerm.connectivity
+    azurerm.identity          = azurerm.identity
+    azurerm.management        = azurerm.management
+    azurerm.production        = azurerm.production
+    azurerm.platform_services = azurerm.platform_services
   }
 
   depends_on = [module.resource_groups]
