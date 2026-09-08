@@ -182,3 +182,8 @@ resource "azurerm_resource_group" "platform_services" {
     criticality     = each.value.crit
   }
 }
+# Migración de estado: data_ai -> platform_services
+moved {
+  from = azurerm_resource_group.data_ai
+  to   = azurerm_resource_group.platform_services
+}
