@@ -66,7 +66,7 @@ locals {
       costCenter   = "CC-006"
     }
     platform_services = {
-      display_name = "Budget-Data-IA-Sub"
+      display_name = "Budget-PlatformServices-Sub"
       sub_key      = "platform_services"
       amount       = 435
       costCenter   = "CC-007"
