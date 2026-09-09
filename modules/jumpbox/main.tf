@@ -92,4 +92,6 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "jumpbox" {
     time_in_minutes = 30
     email           = var.notification_email
   }
+  tags = var.tags
+
 }
