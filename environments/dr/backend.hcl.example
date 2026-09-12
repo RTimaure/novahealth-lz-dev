@@ -1,0 +1,18 @@
+# Copy this file to backend.hcl (same folder) and fill in the real values,
+# then run:
+#
+#   terraform init -backend-config=backend.hcl
+#
+# backend.hcl is gitignored on purpose: these values point at your state
+# storage account and are environment-specific, but are not secret by
+# themselves. Do NOT put access keys here — we authenticate to the storage
+# account using your logged-in identity (Azure CLI / OIDC) via
+# use_azuread_auth, so no access_key/sas_token is ever required.
+#
+# Requirement: your identity (user or the CI service principal) needs the
+# "Storage Blob Data Contributor" role on this storage account.
+
+resource_group_name  = "rg-terraform-tfm-state"
+storage_account_name = "sttfmstateshared"
+container_name       = "terraform-state"
+use_azuread_auth     = true

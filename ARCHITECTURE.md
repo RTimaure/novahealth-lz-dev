@@ -59,6 +59,49 @@ opted into per-workload rather than part of the core landing zone.
   `providers = { ... }` map — this is the correct pattern for
   multi-subscription Terraform.
 
+### 1.3 Local `terraform init` — backend.hcl
+
+Because the backend block only declares `key` (partial config), running
+`terraform init` locally with no flags fails with:
+
+```
+Error: One of access_key, sas_token, use_azuread_aauth and resource_group_name must be specified
+```
+
+To init locally, copy the committed example file per environment and fill
+in the real values, then point `init` at it:
+
+```bash
+cd environments/dr        # or environments/primary
+cp backend.hcl.example backend.hcl   # backend.hcl is gitignored
+az login
+terraform init -backend-config=backend.hcl
+```
+
+[environments/primary/backend.hcl.example](environments/primary/backend.hcl.example)
+and [environments/dr/backend.hcl.example](environments/dr/backend.hcl.example)
+both set:
+
+```hcl
+resource_group_name  = "rg-terraform-tfm-state"
+storage_account_name = "sttfmstateshared"
+container_name       = "terraform-state"
+use_azuread_auth     = true
+```
+
+`use_azuread_auth = true` is what fixes the error above: it tells the
+`azurerm` backend to authenticate to the state storage account with your
+logged-in identity (Azure CLI locally, OIDC in CI) instead of requiring an
+`access_key`/`sas_token`. The same flag is passed by CI via
+`-backend-config="use_azuread_auth=true"` in both
+[terraform-plan.yml](.github/workflows/terraform-plan.yml) and
+[terraform-apply.yml](.github/workflows/terraform-apply.yml).
+
+**Required RBAC:** the identity running `init` (your user, or the CI
+service principal) needs the **Storage Blob Data Contributor** role on the
+state storage account — a subscription-level Contributor role alone does
+not grant blob data-plane access.
+
 ## 2. Structural findings & recommendations
 
 ### 2.1 Fixed as part of this change
@@ -69,6 +112,21 @@ opted into per-workload rather than part of the core landing zone.
   consistent **partial backend config** (`key` only in code; account/RG/
   container name supplied via `-backend-config` flags in CI). This removes
   the asymmetry and avoids hardcoding infra names in version control.
+- **Local `terraform init` failing with "One of access_key, sas_token,
+  use_azuread_aauth and resource_group_name must be specified"** — added
+  `backend.hcl.example` per environment (§1.3) plus `use_azuread_auth =
+  true` in CI's `-backend-config`, so both local devs and CI authenticate
+  to the state storage account via Azure AD identity instead of an access
+  key. `backend.hcl` (the real, filled-in copy) is gitignored.
+- **`.tfvars` injected from GitHub secrets in CI** —
+  [terraform-plan.yml](.github/workflows/terraform-plan.yml) and
+  [terraform-apply.yml](.github/workflows/terraform-apply.yml) each have a
+  step that materializes `primary.tfvars`/`dr.tfvars` from a
+  `TFVARS_PRIMARY`/`TFVARS_DR` repo secret right before `plan`/`apply`,
+  then delete it in a `Cleanup sensitive files` step that runs `if:
+  always()` (after apply, not before, so the file exists when needed).
+  This lets the same `-var-file` pattern work in CI without ever
+  committing subscription IDs to the repo.
 
 ### 2.2 Recommended follow-ups (not applied automatically — review first)
 
@@ -168,6 +226,8 @@ Three GitHub Actions workflows were added under
 | `TF_STATE_RESOURCE_GROUP` | RG containing the shared state storage account |
 | `TF_STATE_STORAGE_ACCOUNT` | Storage account name for remote state |
 | `TF_STATE_CONTAINER` | Blob container name for remote state |
+| `TFVARS_PRIMARY` | Full contents of `primary.tfvars`, injected at runtime for the `primary` environment |
+| `TFVARS_DR` | Full contents of `dr.tfvars`, injected at runtime for the `dr` environment (needed once `dr` is enabled in the plan matrix) |
 
 You'll also need to set up **federated credentials** on the Azure AD app so
 it trusts GitHub OIDC tokens for this repo/branch (`repo:<org>/<repo>:ref:refs/heads/main`

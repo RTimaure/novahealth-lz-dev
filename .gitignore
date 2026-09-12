@@ -13,6 +13,10 @@ crash.*.log
 *.tfvars
 *.tfvars.json
 
+# Local backend config (env-specific, not secret but excluded to avoid drift
+# between developers). Copy the committed backend.hcl.example instead.
+backend.hcl
+
 # Override files
 override.tf
 override.tf.json
